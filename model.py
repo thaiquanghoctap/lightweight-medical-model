@@ -169,6 +169,49 @@ class MedNetSegmentation(nn.Module):
         )
 
 
+class MedNetMultiTask(nn.Module):
+    def __init__(self, num_classes, num_segmentation_classes=1, use_cbam=True):
+        super().__init__()
+        self.backbone = ResidualCBAMBackbone(use_cbam=use_cbam)
+
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.dropout = nn.Dropout(0.4)
+        self.fc1 = nn.Linear(1024, 256)
+        self.fc2 = nn.Linear(256, num_classes)
+
+        self.decoder4 = SegmentationDecoderBlock(1024, 512, 512)
+        self.decoder3 = SegmentationDecoderBlock(512, 256, 256)
+        self.decoder2 = SegmentationDecoderBlock(256, 128, 128)
+        self.decoder1 = SegmentationDecoderBlock(128, 64, 64)
+        self.segmentation_head = nn.Conv2d(
+            64, num_segmentation_classes, kernel_size=1
+        )
+
+    def forward(self, x):
+        input_size = x.shape[-2:]
+        encoded, activations = self.backbone(x)
+        stage1, stage2, stage3, stage4, stage5 = activations
+
+        classification = self.pool(encoded)
+        classification = torch.flatten(classification, 1)
+        classification = self.dropout(self.fc1(classification))
+        classification_logits = self.fc2(classification)
+
+        segmentation = self.decoder4(stage5, stage4)
+        segmentation = self.decoder3(segmentation, stage3)
+        segmentation = self.decoder2(segmentation, stage2)
+        segmentation = self.decoder1(segmentation, stage1)
+        segmentation_logits = self.segmentation_head(segmentation)
+        segmentation_logits = F.interpolate(
+            segmentation_logits,
+            size=input_size,
+            mode="bilinear",
+            align_corners=False,
+        )
+
+        return classification_logits, segmentation_logits
+
+
 class MedNet(nn.Module):
     def __init__(self, num_classes, use_cbam=True):
         super().__init__()

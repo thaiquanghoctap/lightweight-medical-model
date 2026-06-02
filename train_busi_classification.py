@@ -196,36 +196,57 @@ def write_epoch_log(log_path, rows):
         writer.writerows(rows)
 
 
-def write_result(log_path, best_val_acc, test_loss, test_acc, test_auc, duration):
-    with log_path.open("w", newline="") as file:
+def append_result(
+    log_path,
+    image_size,
+    use_cbam,
+    run,
+    best_val_acc,
+    test_loss,
+    test_acc,
+    test_auc,
+    duration,
+):
+    should_write_header = not log_path.exists() or log_path.stat().st_size == 0
+    with log_path.open("a", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(
-            ["Best_Val_Acc", "Test_Acc", "Test_AUC", "Test_Loss", "Train_Time_Min"]
-        )
-        writer.writerow([best_val_acc, test_acc, test_auc, test_loss, duration / 60])
-
-
-def write_summary(log_path, rows):
-    with log_path.open("w", newline="") as file:
-        writer = csv.writer(file)
+        if should_write_header:
+            writer.writerow(
+                [
+                    "Image_Size",
+                    "Use_CBAM",
+                    "Run",
+                    "Best_Val_Acc",
+                    "Test_Acc",
+                    "Test_AUC",
+                    "Test_Loss",
+                    "Train_Time_Min",
+                ]
+            )
         writer.writerow(
             [
-                "Image_Size",
-                "Use_CBAM",
-                "Run",
-                "Best_Val_Acc",
-                "Test_Acc",
-                "Test_AUC",
-                "Test_Loss",
-                "Train_Time_Min",
+                image_size,
+                use_cbam,
+                run,
+                best_val_acc,
+                test_acc,
+                test_auc,
+                test_loss,
+                duration / 60,
             ]
         )
-        writer.writerows(rows)
 
 
 def train_one_run(args, device, image_size, use_cbam, run):
     cbam_name = "cbam" if use_cbam else "nocbam"
-    output_dir = args.output_dir / "busi" / f"img_{image_size}" / cbam_name / f"run_{run}"
+    output_dir = (
+        args.output_dir
+        / "busi"
+        / "classification"
+        / f"img_{image_size}"
+        / cbam_name
+        / f"run_{run}"
+    )
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(
@@ -282,8 +303,12 @@ def train_one_run(args, device, image_size, use_cbam, run):
     )
 
     write_epoch_log(output_dir / "epoch_log.csv", epoch_rows)
-    write_result(
-        output_dir / "result.csv",
+    result_path = args.output_dir / "busi" / "classification" / "result.csv"
+    append_result(
+        result_path,
+        image_size,
+        use_cbam,
+        run,
         best_val_acc,
         test_loss,
         test_acc,
@@ -295,18 +320,7 @@ def train_one_run(args, device, image_size, use_cbam, run):
     print(f"Test accuracy: {test_acc:.2f}%")
     print(f"Test AUC: {test_auc:.4f}")
     print(f"Outputs saved to: {output_dir}")
-
-    return [
-        image_size,
-        use_cbam,
-        run,
-        best_val_acc,
-        test_acc,
-        test_auc,
-        test_loss,
-        duration / 60,
-    ]
-
+    print(f"Result appended to: {result_path}")
 
 def train(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -324,18 +338,10 @@ def train(args):
     print(f"Runs per configuration: {args.runs}")
     print(f"Total training sessions: {total_sessions}")
 
-    summary_rows = []
     for image_size in args.img_sizes:
         for use_cbam in cbam_values:
             for run in range(1, args.runs + 1):
-                summary_rows.append(
-                    train_one_run(args, device, image_size, use_cbam, run)
-                )
-
-    summary_path = args.output_dir / "busi" / "results.csv"
-    summary_path.parent.mkdir(parents=True, exist_ok=True)
-    write_summary(summary_path, summary_rows)
-    print(f"\nExperiment summary saved to: {summary_path}")
+                train_one_run(args, device, image_size, use_cbam, run)
 
 
 def parse_args():

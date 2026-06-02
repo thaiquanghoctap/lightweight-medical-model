@@ -10,22 +10,25 @@ import torch
 import torch.optim as optim
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
+from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from model import MedNetSegmentation
+from model import FocalLoss, MedNetMultiTask
 
 
 BUSI_CLASSES = ("benign", "malignant", "normal")
 IMAGE_EXTENSIONS = {".jpeg", ".jpg", ".png"}
+NUM_CLASSES = len(BUSI_CLASSES)
+ALPHA_WEIGHTS = [1.0, 1.0, 1.0]
 
 
-class BUSISegmentationDataset(Dataset):
+class BUSIMultiTaskDataset(Dataset):
     def __init__(self, split_dir, transform):
         self.transform = transform
         self.samples = []
 
-        for class_name in BUSI_CLASSES:
+        for label, class_name in enumerate(BUSI_CLASSES):
             images_dir = split_dir / class_name / "images"
             masks_dir = split_dir / class_name / "masks"
             if not images_dir.exists():
@@ -47,13 +50,13 @@ class BUSISegmentationDataset(Dataset):
                     raise FileNotFoundError(
                         f"Missing mask for image {image_path.name}: {mask_path}"
                     )
-                self.samples.append((image_path, mask_path))
+                self.samples.append((image_path, mask_path, label))
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
-        image_path, mask_path = self.samples[index]
+        image_path, mask_path, label = self.samples[index]
         with Image.open(image_path) as image:
             image = np.asarray(image.convert("RGB")).copy()
         with Image.open(mask_path) as mask:
@@ -63,7 +66,7 @@ class BUSISegmentationDataset(Dataset):
         image = transformed["image"]
         mask = transformed["mask"].float().unsqueeze(0) / 255.0
         mask = (mask > 0.5).float()
-        return image, mask
+        return image, label, mask
 
 
 class EarlyStopping:
@@ -131,8 +134,8 @@ def build_loaders(dataset_dir, image_size, batch_size, num_workers):
                 f"Missing processed split: {split_dir}. Run preprocess.py first."
             )
 
-        dataset = BUSISegmentationDataset(split_dir, transform)
-        print(f"{split}: {len(dataset)} image-mask pairs")
+        dataset = BUSIMultiTaskDataset(split_dir, transform)
+        print(f"{split}: {len(dataset)} image-label-mask samples")
         loaders[split] = DataLoader(
             dataset,
             batch_size=batch_size,
@@ -143,8 +146,8 @@ def build_loaders(dataset_dir, image_size, batch_size, num_workers):
     return loaders
 
 
-def calculate_batch_metrics(logits, masks):
-    predictions = (torch.sigmoid(logits) > 0.5).float()
+def calculate_segmentation_metrics(segmentation_logits, masks):
+    predictions = (torch.sigmoid(segmentation_logits) > 0.5).float()
     predictions = predictions.flatten(start_dim=1)
     masks = masks.flatten(start_dim=1)
 
@@ -159,40 +162,87 @@ def calculate_batch_metrics(logits, masks):
     return dice.sum().item(), iou.sum().item()
 
 
-def run_epoch(model, loader, criterion, device, optimizer=None, description=None):
+def run_epoch(
+    model,
+    loader,
+    classification_criterion,
+    segmentation_criterion,
+    segmentation_weight,
+    device,
+    optimizer=None,
+    description=None,
+    collect_probabilities=False,
+):
     is_training = optimizer is not None
     model.train() if is_training else model.eval()
     total_loss = 0.0
+    total_classification_loss = 0.0
+    total_segmentation_loss = 0.0
+    total_correct = 0
     total_dice = 0.0
     total_iou = 0.0
     total_images = 0
+    all_labels = []
+    all_probabilities = []
 
     with torch.set_grad_enabled(is_training):
-        for images, masks in tqdm(loader, desc=description, leave=False):
+        for images, labels, masks in tqdm(loader, desc=description, leave=False):
             images = images.to(device)
+            labels = labels.to(device)
             masks = masks.to(device)
 
             if is_training:
                 optimizer.zero_grad()
 
-            logits = model(images)
-            loss = criterion(logits, masks)
+            classification_logits, segmentation_logits = model(images)
+            classification_loss = classification_criterion(
+                classification_logits, labels
+            )
+            segmentation_loss = segmentation_criterion(segmentation_logits, masks)
+            loss = classification_loss + segmentation_weight * segmentation_loss
 
             if is_training:
                 loss.backward()
                 optimizer.step()
 
-            batch_dice, batch_iou = calculate_batch_metrics(logits, masks)
-            total_loss += loss.item()
+            batch_size = images.size(0)
+            batch_dice, batch_iou = calculate_segmentation_metrics(
+                segmentation_logits, masks
+            )
+            total_loss += loss.item() * batch_size
+            total_classification_loss += classification_loss.item() * batch_size
+            total_segmentation_loss += segmentation_loss.item() * batch_size
+            total_correct += (
+                classification_logits.argmax(dim=1) == labels
+            ).sum().item()
             total_dice += batch_dice
             total_iou += batch_iou
-            total_images += images.size(0)
+            total_images += batch_size
 
-    return (
-        total_loss / len(loader),
-        total_dice / total_images,
-        total_iou / total_images,
-    )
+            if collect_probabilities:
+                all_labels.extend(labels.cpu().numpy())
+                all_probabilities.extend(
+                    torch.softmax(classification_logits, dim=1).cpu().numpy()
+                )
+
+    metrics = {
+        "loss": total_loss / total_images,
+        "classification_loss": total_classification_loss / total_images,
+        "segmentation_loss": total_segmentation_loss / total_images,
+        "accuracy": 100 * total_correct / total_images,
+        "dice": total_dice / total_images,
+        "iou": total_iou / total_images,
+    }
+
+    if collect_probabilities:
+        labels = np.asarray(all_labels)
+        probabilities = np.asarray(all_probabilities)
+        try:
+            metrics["auc"] = roc_auc_score(labels, probabilities, multi_class="ovr")
+        except ValueError:
+            metrics["auc"] = float("nan")
+
+    return metrics
 
 
 def write_epoch_log(log_path, rows):
@@ -203,6 +253,12 @@ def write_epoch_log(log_path, rows):
                 "Epoch",
                 "Train_Loss",
                 "Val_Loss",
+                "Train_Classification_Loss",
+                "Val_Classification_Loss",
+                "Train_Segmentation_Loss",
+                "Val_Segmentation_Loss",
+                "Train_Acc",
+                "Val_Acc",
                 "Train_Dice",
                 "Val_Dice",
                 "Train_IoU",
@@ -212,16 +268,7 @@ def write_epoch_log(log_path, rows):
         writer.writerows(rows)
 
 
-def append_result(
-    log_path,
-    image_size,
-    use_cbam,
-    best_val_dice,
-    test_loss,
-    test_dice,
-    test_iou,
-    duration,
-):
+def append_result(log_path, best_val_acc, test_metrics, duration, args):
     should_write_header = not log_path.exists() or log_path.stat().st_size == 0
     with log_path.open("a", newline="") as file:
         writer = csv.writer(file)
@@ -230,21 +277,31 @@ def append_result(
                 [
                     "Image_Size",
                     "Use_CBAM",
-                    "Best_Val_Dice",
+                    "Segmentation_Weight",
+                    "Best_Val_Acc",
+                    "Test_Acc",
+                    "Test_AUC",
                     "Test_Dice",
                     "Test_IoU",
                     "Test_Loss",
+                    "Test_Classification_Loss",
+                    "Test_Segmentation_Loss",
                     "Train_Time_Min",
                 ]
             )
         writer.writerow(
             [
-                image_size,
-                use_cbam,
-                best_val_dice,
-                test_dice,
-                test_iou,
-                test_loss,
+                args.image_size,
+                args.use_cbam,
+                args.segmentation_weight,
+                best_val_acc,
+                test_metrics["accuracy"],
+                test_metrics["auc"],
+                test_metrics["dice"],
+                test_metrics["iou"],
+                test_metrics["loss"],
+                test_metrics["classification_loss"],
+                test_metrics["segmentation_loss"],
                 duration / 60,
             ]
         )
@@ -257,16 +314,18 @@ def train(args):
     output_dir = (
         args.output_dir
         / "busi"
-        / "segmentation"
+        / "multi"
         / f"img_{args.image_size}"
         / cbam_name
+        / f"seg_weight_{args.segmentation_weight:g}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Dataset: busi segmentation")
+    print("Dataset: busi multi-task")
     print(f"Device: {device}")
     print(f"Image size: {args.image_size}")
     print(f"CBAM: {args.use_cbam}")
+    print(f"Segmentation weight: {args.segmentation_weight}")
 
     loaders = build_loaders(
         args.dataset_dir,
@@ -274,8 +333,14 @@ def train(args):
         args.batch_size,
         args.num_workers,
     )
-    model = MedNetSegmentation(num_classes=1, use_cbam=args.use_cbam).to(device)
-    criterion = torch.nn.BCEWithLogitsLoss()
+    model = MedNetMultiTask(
+        num_classes=NUM_CLASSES,
+        num_segmentation_classes=1,
+        use_cbam=args.use_cbam,
+    ).to(device)
+    alpha_weights = torch.tensor(ALPHA_WEIGHTS, device=device)
+    classification_criterion = FocalLoss(gamma=2, alpha=alpha_weights)
+    segmentation_criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(
         model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
     )
@@ -286,75 +351,94 @@ def train(args):
 
     checkpoint_path = output_dir / "best_model.pt"
     epoch_rows = []
-    best_val_dice = -1.0
+    best_val_acc = -1.0
     start_time = time.time()
 
     for epoch in range(1, args.epochs + 1):
-        train_loss, train_dice, train_iou = run_epoch(
-            model, loaders["train"], criterion, device, optimizer
+        train_metrics = run_epoch(
+            model,
+            loaders["train"],
+            classification_criterion,
+            segmentation_criterion,
+            args.segmentation_weight,
+            device,
+            optimizer,
         )
-        val_loss, val_dice, val_iou = run_epoch(
-            model, loaders["val"], criterion, device
+        val_metrics = run_epoch(
+            model,
+            loaders["val"],
+            classification_criterion,
+            segmentation_criterion,
+            args.segmentation_weight,
+            device,
         )
         scheduler.step()
         epoch_rows.append(
             [
                 epoch,
-                train_loss,
-                val_loss,
-                train_dice,
-                val_dice,
-                train_iou,
-                val_iou,
+                train_metrics["loss"],
+                val_metrics["loss"],
+                train_metrics["classification_loss"],
+                val_metrics["classification_loss"],
+                train_metrics["segmentation_loss"],
+                val_metrics["segmentation_loss"],
+                train_metrics["accuracy"],
+                val_metrics["accuracy"],
+                train_metrics["dice"],
+                val_metrics["dice"],
+                train_metrics["iou"],
+                val_metrics["iou"],
             ]
         )
         print(
-            f"Epoch {epoch:03d} | Train Dice: {train_dice:.4f} "
-            f"| Val Dice: {val_dice:.4f} | Val IoU: {val_iou:.4f}"
+            f"Epoch {epoch:03d} | Train Acc: {train_metrics['accuracy']:.2f}% "
+            f"| Val Acc: {val_metrics['accuracy']:.2f}% "
+            f"| Val Dice: {val_metrics['dice']:.4f}"
         )
 
-        if val_dice > best_val_dice:
-            best_val_dice = val_dice
+        if val_metrics["accuracy"] > best_val_acc:
+            best_val_acc = val_metrics["accuracy"]
             torch.save(model.state_dict(), checkpoint_path)
 
-        if early_stopping.should_stop(val_dice):
+        if early_stopping.should_stop(val_metrics["accuracy"]):
             print(f"Early stopping triggered at epoch {epoch}")
             break
 
     duration = time.time() - start_time
     model.load_state_dict(torch.load(checkpoint_path, map_location=device))
-    test_loss, test_dice, test_iou = run_epoch(
-        model, loaders["test"], criterion, device, description="Testing"
+    test_metrics = run_epoch(
+        model,
+        loaders["test"],
+        classification_criterion,
+        segmentation_criterion,
+        args.segmentation_weight,
+        device,
+        description="Testing",
+        collect_probabilities=True,
     )
 
     write_epoch_log(output_dir / "epoch_log.csv", epoch_rows)
-    result_path = args.output_dir / "busi" / "segmentation" / "result.csv"
-    append_result(
-        result_path,
-        args.image_size,
-        args.use_cbam,
-        best_val_dice,
-        test_loss,
-        test_dice,
-        test_iou,
-        duration,
-    )
+    result_path = args.output_dir / "busi" / "multi" / "result.csv"
+    append_result(result_path, best_val_acc, test_metrics, duration, args)
 
-    print(f"Best validation Dice: {best_val_dice:.4f}")
-    print(f"Test Dice: {test_dice:.4f}")
-    print(f"Test IoU: {test_iou:.4f}")
+    print(f"Best validation accuracy: {best_val_acc:.2f}%")
+    print(f"Test accuracy: {test_metrics['accuracy']:.2f}%")
+    print(f"Test AUC: {test_metrics['auc']:.4f}")
+    print(f"Test Dice: {test_metrics['dice']:.4f}")
+    print(f"Test IoU: {test_metrics['iou']:.4f}")
     print(f"Outputs saved to: {output_dir}")
     print(f"Result appended to: {result_path}")
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train MedNet segmentation on BUSI.")
+    parser = argparse.ArgumentParser(description="Train multi-task MedNet on BUSI.")
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--cbam", choices=["true", "false"], default="true")
+    parser.add_argument("--segmentation-weight", type=float, default=1.0)
     parser.add_argument("--epochs", type=int, default=70)
-    parser.add_argument("--batch-size", type=int, default=16)
+    parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=0.0003)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
