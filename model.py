@@ -126,6 +126,49 @@ class ResidualCBAMBackbone(nn.Module):
         return x, activations
 
 
+class SegmentationDecoderBlock(nn.Module):
+    def __init__(self, in_channels, skip_channels, out_channels):
+        super().__init__()
+        self.convs = nn.Sequential(
+            nn.Conv2d(in_channels + skip_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, x, skip):
+        x = F.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
+        return self.convs(torch.cat([x, skip], dim=1))
+
+
+class MedNetSegmentation(nn.Module):
+    def __init__(self, num_classes=1, use_cbam=True):
+        super().__init__()
+        self.backbone = ResidualCBAMBackbone(use_cbam=use_cbam)
+        self.decoder4 = SegmentationDecoderBlock(1024, 512, 512)
+        self.decoder3 = SegmentationDecoderBlock(512, 256, 256)
+        self.decoder2 = SegmentationDecoderBlock(256, 128, 128)
+        self.decoder1 = SegmentationDecoderBlock(128, 64, 64)
+        self.segmentation_head = nn.Conv2d(64, num_classes, kernel_size=1)
+
+    def forward(self, x):
+        input_size = x.shape[-2:]
+        _, activations = self.backbone(x)
+        stage1, stage2, stage3, stage4, stage5 = activations
+
+        x = self.decoder4(stage5, stage4)
+        x = self.decoder3(x, stage3)
+        x = self.decoder2(x, stage2)
+        x = self.decoder1(x, stage1)
+        logits = self.segmentation_head(x)
+
+        return F.interpolate(
+            logits, size=input_size, mode="bilinear", align_corners=False
+        )
+
+
 class MedNet(nn.Module):
     def __init__(self, num_classes, use_cbam=True):
         super().__init__()

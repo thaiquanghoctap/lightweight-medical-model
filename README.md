@@ -8,7 +8,10 @@ This project contains a cleaned-up version of the original MedNet source code.
 preprocess.py   Prepare MedMNIST or BUSI data for classification
 model.py        MedNet architecture and focal loss
 train.py        Train MedNet with configurable ablation settings
-train_busi.py   Train MedNet on BUSI classification images only
+train_busi_classification.py
+                Train MedNet on BUSI classification images only
+train_busi_segmentation.py
+                Train MedNet segmentation on BUSI image-mask pairs
 data/           Original MedMNIST .npz files
 outputs/        Training outputs
 ```
@@ -71,7 +74,13 @@ uv run train.py --dataset bloodmnist
 To train BUSI using classification images while ignoring masks:
 
 ```bash
-uv run train_busi.py
+uv run train_busi_classification.py
+```
+
+To train BUSI segmentation using image-mask pairs:
+
+```bash
+uv run train_busi_segmentation.py
 ```
 
 The default command trains one model:
