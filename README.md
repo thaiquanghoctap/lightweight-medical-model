@@ -5,9 +5,10 @@ This project contains a cleaned-up version of the original MedNet source code.
 ## Files
 
 ```text
-preprocess.py   Convert a MedMNIST .npz file to ImageFolder format
+preprocess.py   Prepare MedMNIST or BUSI data for classification
 model.py        MedNet architecture and focal loss
 train.py        Train MedNet with configurable ablation settings
+train_busi.py   Train MedNet on BUSI classification images only
 data/           Original MedMNIST .npz files
 outputs/        Training outputs
 ```
@@ -19,6 +20,7 @@ bloodmnist
 breastmnist
 dermamnist
 octmnist
+busi
 ```
 
 ## Preprocess A Dataset
@@ -36,12 +38,40 @@ data/<dataset>/val/
 data/<dataset>/test/
 ```
 
+Each class contains an `images/` folder. BUSI classes also contain a `masks/`
+folder:
+
+```text
+data/busi/train/
+├── benign/
+│   ├── images/
+│   └── masks/
+├── malignant/
+│   ├── images/
+│   └── masks/
+└── normal/
+    ├── images/
+    └── masks/
+```
+
+To read `data/busi_224.npz` and write the BUSI image folders:
+
+```bash
+uv run preprocess.py --dataset busi --overwrite
+```
+
 Use `--overwrite` to replace an existing processed dataset.
 
 ## Train A Dataset
 
 ```bash
 uv run train.py --dataset bloodmnist
+```
+
+To train BUSI using classification images while ignoring masks:
+
+```bash
+uv run train_busi.py
 ```
 
 The default command trains one model:

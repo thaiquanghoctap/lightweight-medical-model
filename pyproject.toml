@@ -1,0 +1,14 @@
+[project]
+name = "lightweight-mednet"
+version = "0.1.0"
+description = "A lightweight attention-augmented CNN for MedMNIST classification"
+requires-python = ">=3.10"
+dependencies = [
+    "albumentations",
+    "numpy",
+    "pillow",
+    "scikit-learn",
+    "torch",
+    "torchvision",
+    "tqdm",
+]

@@ -32,3 +32,5 @@ logs/
 
 # Notebook checkpoints
 .ipynb_checkpoints/
+
+storage
