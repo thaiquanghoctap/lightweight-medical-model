@@ -104,11 +104,6 @@ class ResidualDSCBAMBlock(nn.Module):
     def forward(self, x):
         return self.cbam(self.convs(x)) + self.shortcut(x)
 
-    def forward_with_attention(self, x):
-        attended = self.cbam(self.convs(x))
-        output = attended + self.shortcut(x)
-        return output, attended
-
 
 class ResidualCBAMBackbone(nn.Module):
     def __init__(self, in_channels=3, use_cbam=True):
@@ -129,17 +124,6 @@ class ResidualCBAMBackbone(nn.Module):
             x = stage(x)
             activations.append(x)
         return x, activations
-
-    def forward_with_attended_skips(self, x):
-        activations = []
-        attended_skips = []
-
-        for stage in self.stages:
-            x, attended = stage.forward_with_attention(x)
-            activations.append(x)
-            attended_skips.append(attended)
-
-        return x, activations, attended_skips
 
 
 class SegmentationDecoderBlock(nn.Module):
@@ -320,7 +304,7 @@ class ResidualInceptionDSCBlock(nn.Module):
 
 
 class RCBAMDecoderBlock(nn.Module):
-    """Upsample, fuse an attended encoder skip, then refine it."""
+    """Upsample, fuse an encoder output, then refine it."""
 
     def __init__(self, in_channels, skip_channels, out_channels):
         super().__init__()
@@ -333,20 +317,20 @@ class RCBAMDecoderBlock(nn.Module):
             out_channels + skip_channels, out_channels
         )
 
-    def forward(self, x, attended_skip):
+    def forward(self, x, skip):
         x = F.interpolate(
             x,
-            size=attended_skip.shape[-2:],
+            size=skip.shape[-2:],
             mode="bilinear",
             align_corners=False,
         )
         x = self.channel_reduction(x)
-        x = torch.cat([x, attended_skip], dim=1)
+        x = torch.cat([x, skip], dim=1)
         return self.refinement(x)
 
 
 class RCBAMMNet(nn.Module):
-    """MedNet encoder with an attended-skip residual inception decoder."""
+    """MedNet encoder with a residual inception decoder."""
 
     def __init__(self, num_classes=3, num_segmentation_classes=1):
         super().__init__()
@@ -367,18 +351,18 @@ class RCBAMMNet(nn.Module):
 
     def forward(self, x):
         input_size = x.shape[-2:]
-        encoded, _, attended_skips = self.backbone.forward_with_attended_skips(x)
-        attended1, attended2, attended3, attended4, _ = attended_skips
+        encoded, activations = self.backbone(x)
+        stage1, stage2, stage3, stage4, _ = activations
 
         classification = self.pool(encoded)
         classification = torch.flatten(classification, 1)
         classification = self.dropout(self.fc1(classification))
         classification_logits = self.fc2(classification)
 
-        segmentation = self.decoder4(encoded, attended4)
-        segmentation = self.decoder3(segmentation, attended3)
-        segmentation = self.decoder2(segmentation, attended2)
-        segmentation = self.decoder1(segmentation, attended1)
+        segmentation = self.decoder4(encoded, stage4)
+        segmentation = self.decoder3(segmentation, stage3)
+        segmentation = self.decoder2(segmentation, stage2)
+        segmentation = self.decoder1(segmentation, stage1)
         segmentation_logits = self.segmentation_head(segmentation)
         segmentation_logits = F.interpolate(
             segmentation_logits,

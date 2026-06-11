@@ -97,11 +97,14 @@ def test(args):
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
         / f"seg_weight_{args.segmentation_weight:g}"
-        / f"seed_{args.seed}"
         / "best_joint.pt"
     )
     output_dir = args.output_dir or (
-        checkpoint.parent / "test_images"
+        Path("outputs")
+        / "busi"
+        / "r_cbam_mnet"
+        / f"img_{args.image_size}"
+        / "test_images"
     )
 
     if not checkpoint.exists():

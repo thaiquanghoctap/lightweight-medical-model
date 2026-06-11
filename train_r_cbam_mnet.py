@@ -297,23 +297,46 @@ def save_epoch_log(path, rows):
 
 
 def save_result(path, args, parameter_count, best_scores, test_metrics, duration):
-    with path.open("w", newline="") as file:
+    should_write_header = not path.exists() or path.stat().st_size == 0
+    with path.open("a", newline="") as file:
         writer = csv.writer(file)
-        writer.writerow(["Metric", "Value"])
-        writer.writerows(
+        if should_write_header:
+            writer.writerow(
+                [
+                    "Image_Size",
+                    "Segmentation_Weight",
+                    "Seed",
+                    "Parameters",
+                    "Best_Val_Accuracy",
+                    "Best_Val_Dice",
+                    "Best_Val_Joint_Score",
+                    "Test_Accuracy",
+                    "Test_AUC",
+                    "Test_Dice",
+                    "Test_IoU",
+                    "Test_Loss",
+                    "Test_Classification_Loss",
+                    "Test_Segmentation_Loss",
+                    "Training_Time_Min",
+                ]
+            )
+        writer.writerow(
             [
-                ["Image_Size", args.image_size],
-                ["Segmentation_Weight", args.segmentation_weight],
-                ["Parameters", parameter_count],
-                ["Best_Val_Accuracy", best_scores["accuracy"]],
-                ["Best_Val_Dice", best_scores["dice"]],
-                ["Best_Val_Joint_Score", best_scores["joint"]],
-                ["Test_Accuracy", test_metrics["accuracy"]],
-                ["Test_AUC", test_metrics["auc"]],
-                ["Test_Dice", test_metrics["dice"]],
-                ["Test_IoU", test_metrics["iou"]],
-                ["Test_Loss", test_metrics["loss"]],
-                ["Training_Time_Min", duration / 60],
+                args.image_size,
+                args.segmentation_weight,
+                args.seed,
+                parameter_count,
+                best_scores["accuracy"],
+                best_scores["dice"],
+                best_scores["joint"],
+                test_metrics["accuracy"],
+                test_metrics["auc"],
+                test_metrics["dice"],
+                test_metrics["iou"],
+                test_metrics["loss"],
+                test_metrics["classification_loss"],
+                test_metrics["segmentation_loss"],
+                duration / 60,
             ]
         )
 
@@ -327,7 +350,6 @@ def train(args):
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
         / f"seg_weight_{args.segmentation_weight:g}"
-        / f"seed_{args.seed}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -412,8 +434,12 @@ def train(args):
         save_epoch_log(output_dir / "epoch_log.csv", epoch_rows)
 
         print(
-            f"Epoch {epoch:03d} | Val Acc: {val_metrics['accuracy']:.2f}% "
+            f"Epoch {epoch:03d} "
+            f"| Train Acc: {train_metrics['accuracy']:.2f}% "
+            f"| Val Acc: {val_metrics['accuracy']:.2f}% "
+            f"| Train Dice: {train_metrics['dice']:.4f} "
             f"| Val Dice: {val_metrics['dice']:.4f} "
+            f"| Val IoU: {val_metrics['iou']:.4f} "
             f"| Joint: {val_joint:.4f}"
         )
 
@@ -445,8 +471,9 @@ def train(args):
         description="Test",
         collect_probabilities=True,
     )
+    result_path = args.output_dir / "busi" / "r_cbam_mnet" / "result.csv"
     save_result(
-        output_dir / "result.csv",
+        result_path,
         args,
         parameter_count,
         best_scores,
@@ -458,7 +485,8 @@ def train(args):
     print(f"Test AUC: {test_metrics['auc']:.4f}")
     print(f"Test Dice: {test_metrics['dice']:.4f}")
     print(f"Test IoU: {test_metrics['iou']:.4f}")
-    print(f"Outputs: {output_dir}")
+    print(f"Outputs saved to: {output_dir}")
+    print(f"Result appended to: {result_path}")
 
 
 def parse_args():
