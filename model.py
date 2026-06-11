@@ -341,6 +341,11 @@ class RCBAMMNet(nn.Module):
         self.fc1 = nn.Linear(1024, 256)
         self.fc2 = nn.Linear(256, num_classes)
 
+        self.skip_cbam1 = CBAM(64)
+        self.skip_cbam2 = CBAM(128)
+        self.skip_cbam3 = CBAM(256)
+        self.skip_cbam4 = CBAM(512)
+
         self.decoder4 = RCBAMDecoderBlock(1024, 512, 512)
         self.decoder3 = RCBAMDecoderBlock(512, 256, 256)
         self.decoder2 = RCBAMDecoderBlock(256, 128, 128)
@@ -359,10 +364,15 @@ class RCBAMMNet(nn.Module):
         classification = self.dropout(self.fc1(classification))
         classification_logits = self.fc2(classification)
 
-        segmentation = self.decoder4(encoded, stage4)
-        segmentation = self.decoder3(segmentation, stage3)
-        segmentation = self.decoder2(segmentation, stage2)
-        segmentation = self.decoder1(segmentation, stage1)
+        skip1 = self.skip_cbam1(stage1)
+        skip2 = self.skip_cbam2(stage2)
+        skip3 = self.skip_cbam3(stage3)
+        skip4 = self.skip_cbam4(stage4)
+
+        segmentation = self.decoder4(encoded, skip4)
+        segmentation = self.decoder3(segmentation, skip3)
+        segmentation = self.decoder2(segmentation, skip2)
+        segmentation = self.decoder1(segmentation, skip1)
         segmentation_logits = self.segmentation_head(segmentation)
         segmentation_logits = F.interpolate(
             segmentation_logits,
