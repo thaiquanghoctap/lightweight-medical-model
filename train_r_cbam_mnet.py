@@ -305,6 +305,9 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
                 [
                     "Image_Size",
                     "Segmentation_Weight",
+                    "Learning_Rate",
+                    "Weight_Decay",
+                    "Patience",
                     "Seed",
                     "Parameters",
                     "Best_Val_Accuracy",
@@ -324,6 +327,9 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
             [
                 args.image_size,
                 args.segmentation_weight,
+                args.learning_rate,
+                args.weight_decay,
+                args.patience,
                 args.seed,
                 parameter_count,
                 best_scores["accuracy"],
@@ -350,6 +356,9 @@ def train(args):
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
         / f"seg_weight_{args.segmentation_weight:g}"
+        / f"lr_{args.learning_rate:g}"
+        / f"weight_decay_{args.weight_decay:g}"
+        / f"patience_{args.patience}"
     )
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -471,7 +480,7 @@ def train(args):
         description="Test",
         collect_probabilities=True,
     )
-    result_path = args.output_dir / "busi" / "r_cbam_mnet" / "result.csv"
+    result_path = output_dir / "result.csv"
     save_result(
         result_path,
         args,
