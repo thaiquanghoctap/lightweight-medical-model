@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -106,17 +108,20 @@ class ResidualDSCBAMBlock(nn.Module):
 
 
 class ResidualCBAMBackbone(nn.Module):
-    def __init__(self, in_channels=3, use_cbam=True):
+    def __init__(self, in_channels=3, use_cbam=True, width_mult=1.0):
         super().__init__()
-        self.stages = nn.ModuleList(
-            [
-                ResidualDSCBAMBlock(in_channels, 64, stride=1, use_cbam=use_cbam),
-                ResidualDSCBAMBlock(64, 128, stride=2, use_cbam=use_cbam),
-                ResidualDSCBAMBlock(128, 256, stride=2, use_cbam=use_cbam),
-                ResidualDSCBAMBlock(256, 512, stride=2, use_cbam=use_cbam),
-                ResidualDSCBAMBlock(512, 1024, stride=2, use_cbam=use_cbam),
-            ]
-        )
+        base_channels = [64, 128, 256, 512, 1024]
+        self.channels = [int(round(c * width_mult)) for c in base_channels]
+        strides = [1, 2, 2, 2, 2]
+
+        stages = []
+        previous = in_channels
+        for out_channels, stride in zip(self.channels, strides):
+            stages.append(
+                ResidualDSCBAMBlock(previous, out_channels, stride=stride, use_cbam=use_cbam)
+            )
+            previous = out_channels
+        self.stages = nn.ModuleList(stages)
 
     def forward(self, x):
         activations = []
@@ -210,6 +215,227 @@ class MedNetMultiTask(nn.Module):
         )
 
         return classification_logits, segmentation_logits
+
+
+def channel_shuffle(x, groups):
+    batch_size, channels, height, width = x.size()
+    channels_per_group = channels // groups
+    x = x.view(batch_size, groups, channels_per_group, height, width)
+    x = torch.transpose(x, 1, 2).contiguous()
+    return x.view(batch_size, -1, height, width)
+
+
+def mk_init_weights(module):
+    """MK-UNet 'normal' init scheme (normal std=0.02 for convs, BN to 1/0)."""
+    if isinstance(module, nn.Conv2d):
+        nn.init.normal_(module.weight, std=0.02)
+        if module.bias is not None:
+            nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.BatchNorm2d):
+        nn.init.constant_(module.weight, 1)
+        nn.init.constant_(module.bias, 0)
+
+
+class MKChannelAttention(nn.Module):
+    """MK-UNet channel attention (shared MLP over avg and max pooling)."""
+
+    def __init__(self, channels, ratio=16):
+        super().__init__()
+        if channels < ratio:
+            ratio = channels
+        reduced = channels // ratio
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
+        self.fc1 = nn.Conv2d(channels, reduced, kernel_size=1, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+        self.fc2 = nn.Conv2d(reduced, channels, kernel_size=1, bias=False)
+        self.sigmoid = nn.Sigmoid()
+        self.apply(mk_init_weights)
+
+    def forward(self, x):
+        avg_out = self.fc2(self.relu(self.fc1(self.avg_pool(x))))
+        max_out = self.fc2(self.relu(self.fc1(self.max_pool(x))))
+        return self.sigmoid(avg_out + max_out)
+
+
+class MKSpatialAttention(nn.Module):
+    """MK-UNet spatial attention with a 7x7 convolution."""
+
+    def __init__(self, kernel_size=7):
+        super().__init__()
+        self.conv = nn.Conv2d(2, 1, kernel_size, padding=kernel_size // 2, bias=False)
+        self.sigmoid = nn.Sigmoid()
+        self.apply(mk_init_weights)
+
+    def forward(self, x):
+        avg_out = torch.mean(x, dim=1, keepdim=True)
+        max_out, _ = torch.max(x, dim=1, keepdim=True)
+        attention = self.conv(torch.cat([avg_out, max_out], dim=1))
+        return self.sigmoid(attention)
+
+
+class GroupedAttentionGate(nn.Module):
+    """MK-UNet grouped attention gate fusing a gating signal with a skip."""
+
+    def __init__(self, channels, kernel_size=3):
+        super().__init__()
+        intermediate = channels // 2
+        groups = intermediate if kernel_size != 1 else 1
+        padding = kernel_size // 2
+        self.gate = nn.Sequential(
+            nn.Conv2d(channels, intermediate, kernel_size, padding=padding, groups=groups, bias=True),
+            nn.BatchNorm2d(intermediate),
+        )
+        self.skip = nn.Sequential(
+            nn.Conv2d(channels, intermediate, kernel_size, padding=padding, groups=groups, bias=True),
+            nn.BatchNorm2d(intermediate),
+        )
+        self.attention = nn.Sequential(
+            nn.Conv2d(intermediate, 1, kernel_size=1, bias=True),
+            nn.BatchNorm2d(1),
+            nn.Sigmoid(),
+        )
+        self.relu = nn.ReLU(inplace=True)
+        self.apply(mk_init_weights)
+
+    def forward(self, gate, skip):
+        psi = self.relu(self.gate(gate) + self.skip(skip))
+        return skip * self.attention(psi)
+
+
+class MultiKernelDepthwiseConv(nn.Module):
+    """Parallel depthwise convolutions with multiple kernel sizes."""
+
+    def __init__(self, channels, kernel_sizes=(1, 3, 5)):
+        super().__init__()
+        self.branches = nn.ModuleList(
+            nn.Sequential(
+                nn.Conv2d(channels, channels, kernel_size, padding=kernel_size // 2, groups=channels, bias=False),
+                nn.BatchNorm2d(channels),
+                nn.ReLU6(inplace=True),
+            )
+            for kernel_size in kernel_sizes
+        )
+        self.apply(mk_init_weights)
+
+    def forward(self, x):
+        return [branch(x) for branch in self.branches]
+
+
+class MultiKernelInvertedResidual(nn.Module):
+    """MK-UNet MKIR block: expand, multi-kernel depthwise, project."""
+
+    def __init__(self, in_channels, out_channels, expansion_factor=2, kernel_sizes=(1, 3, 5)):
+        super().__init__()
+        expanded = in_channels * expansion_factor
+        self.pconv1 = nn.Sequential(
+            nn.Conv2d(in_channels, expanded, kernel_size=1, bias=False),
+            nn.BatchNorm2d(expanded),
+            nn.ReLU6(inplace=True),
+        )
+        self.multi_scale = MultiKernelDepthwiseConv(expanded, kernel_sizes)
+        self.shuffle_groups = math.gcd(expanded, out_channels)
+        self.pconv2 = nn.Sequential(
+            nn.Conv2d(expanded, out_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(out_channels),
+        )
+        self.project_shortcut = (
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+            if in_channels != out_channels
+            else None
+        )
+        self.apply(mk_init_weights)
+
+    def forward(self, x):
+        out = self.pconv1(x)
+        out = sum(self.multi_scale(out))
+        out = channel_shuffle(out, self.shuffle_groups)
+        out = self.pconv2(out)
+        shortcut = x if self.project_shortcut is None else self.project_shortcut(x)
+        return out + shortcut
+
+
+class MKMNetDecoderBlock(nn.Module):
+    """One MK-UNet style decoder stage on MedNet encoder features."""
+
+    def __init__(self, in_channels, skip_channels):
+        super().__init__()
+        self.channel_attention = MKChannelAttention(in_channels)
+        self.spatial_attention = MKSpatialAttention()
+        self.mkir = MultiKernelInvertedResidual(in_channels, skip_channels)
+        self.gate = GroupedAttentionGate(skip_channels)
+
+    def forward(self, x, skip):
+        x = self.channel_attention(x) * x
+        x = self.spatial_attention(x) * x
+        x = self.mkir(x)
+        x = F.relu(
+            F.interpolate(x, size=skip.shape[-2:], mode="bilinear", align_corners=False)
+        )
+        return x + self.gate(x, skip)
+
+
+class MKMNet(nn.Module):
+    """MedNet classification backbone fused with an MK-UNet decoder."""
+
+    def __init__(
+        self,
+        num_classes=3,
+        num_segmentation_classes=1,
+        deep_supervision=True,
+        width_mult=1.0,
+    ):
+        super().__init__()
+        self.deep_supervision = deep_supervision
+        self.backbone = ResidualCBAMBackbone(use_cbam=True, width_mult=width_mult)
+        c1, c2, c3, c4, c5 = self.backbone.channels
+
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        self.dropout = nn.Dropout(0.4)
+        self.fc1 = nn.Linear(c5, 256)
+        self.fc2 = nn.Linear(256, num_classes)
+
+        self.decoder1 = MKMNetDecoderBlock(c5, c4)
+        self.decoder2 = MKMNetDecoderBlock(c4, c3)
+        self.decoder3 = MKMNetDecoderBlock(c3, c2)
+        self.decoder4 = MKMNetDecoderBlock(c2, c1)
+        self.segmentation_head = nn.Conv2d(c1, num_segmentation_classes, kernel_size=1)
+
+        self.aux_head1 = nn.Conv2d(c4, num_segmentation_classes, kernel_size=1)
+        self.aux_head2 = nn.Conv2d(c3, num_segmentation_classes, kernel_size=1)
+        self.aux_head3 = nn.Conv2d(c2, num_segmentation_classes, kernel_size=1)
+
+    def forward(self, x):
+        input_size = x.shape[-2:]
+        encoded, activations = self.backbone(x)
+        stage1, stage2, stage3, stage4, _ = activations
+
+        classification = self.pool(encoded)
+        classification = torch.flatten(classification, 1)
+        classification = self.dropout(self.fc1(classification))
+        classification_logits = self.fc2(classification)
+
+        d1 = self.decoder1(encoded, stage4)
+        d2 = self.decoder2(d1, stage3)
+        d3 = self.decoder3(d2, stage2)
+        d4 = self.decoder4(d3, stage1)
+
+        segmentation_logits = F.interpolate(
+            self.segmentation_head(d4), size=input_size, mode="bilinear", align_corners=False
+        )
+
+        if not self.deep_supervision:
+            return classification_logits, segmentation_logits
+
+        auxiliary_logits = [
+            F.interpolate(head(feature), size=input_size, mode="bilinear", align_corners=False)
+            for head, feature in (
+                (self.aux_head1, d1),
+                (self.aux_head2, d2),
+                (self.aux_head3, d3),
+            )
+        ]
+        return classification_logits, segmentation_logits, auxiliary_logits
 
 
 class MedNet(nn.Module):
