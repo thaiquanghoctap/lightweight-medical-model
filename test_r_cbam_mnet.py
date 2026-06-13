@@ -95,7 +95,7 @@ def build_run_dir(args):
         / "busi"
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
-        / f"seg_weight_{args.segmentation_weight:g}"
+        / f"lambda_{args.lambda_weight:g}"
         / f"lr_{args.learning_rate:g}"
         / f"weight_decay_{args.weight_decay:g}"
         / f"patience_{args.patience}"
@@ -105,7 +105,7 @@ def build_run_dir(args):
 def test(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run_dir = build_run_dir(args)
-    checkpoint = args.checkpoint or run_dir / "best_joint.pt"
+    checkpoint = args.checkpoint or run_dir / "best_model.pt"
     output_dir = args.output_dir or run_dir / "test_images"
 
     if not checkpoint.exists():
@@ -188,7 +188,7 @@ def parse_args():
     parser.add_argument("--checkpoint", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--image-size", type=int, default=224)
-    parser.add_argument("--segmentation-weight", type=float, default=1.0)
+    parser.add_argument("--lambda", dest="lambda_weight", type=float, default=0.8)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--patience", type=int, default=10)

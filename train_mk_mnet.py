@@ -91,6 +91,8 @@ class SegmentationLoss(nn.Module):
 
 
 class EarlyStopping:
+    """Stops training when the monitored validation loss stops decreasing."""
+
     def __init__(self, patience=10, min_delta=0.001):
         self.patience = patience
         self.min_delta = min_delta
@@ -98,7 +100,7 @@ class EarlyStopping:
         self.counter = 0
 
     def should_stop(self, score):
-        if self.best_score is None or score >= self.best_score + self.min_delta:
+        if self.best_score is None or score <= self.best_score - self.min_delta:
             self.best_score = score
             self.counter = 0
         else:
@@ -190,7 +192,7 @@ def run_epoch(
     loader,
     classification_criterion,
     segmentation_criterion,
-    segmentation_weight,
+    lambda_weight,
     aux_weight,
     device,
     optimizer=None,
@@ -236,7 +238,10 @@ def run_epoch(
                 total_segmentation_loss = total_segmentation_loss + aux_weight * segmentation_criterion(
                     aux_logits, masks
                 )
-            loss = classification_loss + segmentation_weight * total_segmentation_loss
+            loss = (
+                (1.0 - lambda_weight) * classification_loss
+                + lambda_weight * total_segmentation_loss
+            )
 
             if is_training:
                 loss.backward()
@@ -281,10 +286,6 @@ def run_epoch(
     return metrics
 
 
-def joint_score(metrics):
-    return 0.5 * (metrics["accuracy"] / 100.0 + metrics["dice"])
-
-
 def save_epoch_log(path, rows):
     columns = [
         "Epoch",
@@ -300,7 +301,6 @@ def save_epoch_log(path, rows):
         "Val_Dice",
         "Train_IoU",
         "Val_IoU",
-        "Val_Joint_Score",
     ]
     with path.open("w", newline="") as file:
         writer = csv.writer(file)
@@ -308,7 +308,7 @@ def save_epoch_log(path, rows):
         writer.writerows(rows)
 
 
-def save_result(path, args, parameter_count, best_scores, test_metrics, duration):
+def save_result(path, args, parameter_count, best_val_loss, test_metrics, duration):
     should_write_header = not path.exists() or path.stat().st_size == 0
     with path.open("a", newline="") as file:
         writer = csv.writer(file)
@@ -317,7 +317,7 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
                 [
                     "Image_Size",
                     "Width_Mult",
-                    "Segmentation_Weight",
+                    "Lambda",
                     "Aux_Weight",
                     "Deep_Supervision",
                     "Learning_Rate",
@@ -325,9 +325,7 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
                     "Patience",
                     "Seed",
                     "Parameters",
-                    "Best_Val_Accuracy",
-                    "Best_Val_Dice",
-                    "Best_Val_Joint_Score",
+                    "Best_Val_Loss",
                     "Test_Accuracy",
                     "Test_AUC",
                     "Test_Dice",
@@ -342,7 +340,7 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
             [
                 args.image_size,
                 args.width_mult,
-                args.segmentation_weight,
+                args.lambda_weight,
                 args.aux_weight,
                 args.deep_supervision,
                 args.learning_rate,
@@ -350,9 +348,7 @@ def save_result(path, args, parameter_count, best_scores, test_metrics, duration
                 args.patience,
                 args.seed,
                 parameter_count,
-                best_scores["accuracy"],
-                best_scores["dice"],
-                best_scores["joint"],
+                best_val_loss,
                 test_metrics["accuracy"],
                 test_metrics["auc"],
                 test_metrics["dice"],
@@ -374,7 +370,7 @@ def train(args):
         / "mk_mnet"
         / f"img_{args.image_size}"
         / f"width_{args.width_mult:g}"
-        / f"seg_weight_{args.segmentation_weight:g}"
+        / f"lambda_{args.lambda_weight:g}"
         / f"lr_{args.learning_rate:g}"
         / f"weight_decay_{args.weight_decay:g}"
         / f"patience_{args.patience}"
@@ -397,9 +393,10 @@ def train(args):
     print("Model: MK-MNet")
     print(f"Device: {device}")
     print(f"Image size: {args.image_size}")
+    print(f"Width multiplier: {args.width_mult}")
     print(f"Parameters: {parameter_count:,}")
     print(f"Deep supervision: {args.deep_supervision}")
-    print(f"Segmentation weight: {args.segmentation_weight}")
+    print(f"Lambda (segmentation weight): {args.lambda_weight}")
 
     class_weights = torch.tensor([1.0, 1.0, 1.0], device=device)
     classification_criterion = FocalLoss(gamma=2, alpha=class_weights)
@@ -414,12 +411,8 @@ def train(args):
     )
     early_stopping = EarlyStopping(patience=args.patience)
 
-    checkpoints = {
-        "accuracy": output_dir / "best_classification.pt",
-        "dice": output_dir / "best_segmentation.pt",
-        "joint": output_dir / "best_joint.pt",
-    }
-    best_scores = {"accuracy": -1.0, "dice": -1.0, "joint": -1.0}
+    checkpoint_path = output_dir / "best_model.pt"
+    best_val_loss = float("inf")
     epoch_rows = []
     start_time = time.time()
 
@@ -429,7 +422,7 @@ def train(args):
             loaders["train"],
             classification_criterion,
             segmentation_criterion,
-            args.segmentation_weight,
+            args.lambda_weight,
             args.aux_weight,
             device,
             optimizer=optimizer,
@@ -440,13 +433,12 @@ def train(args):
             loaders["val"],
             classification_criterion,
             segmentation_criterion,
-            args.segmentation_weight,
+            args.lambda_weight,
             args.aux_weight,
             device,
             description=f"Val {epoch:03d}",
         )
         scheduler.step()
-        val_joint = joint_score(val_metrics)
 
         epoch_rows.append(
             [
@@ -463,45 +455,37 @@ def train(args):
                 val_metrics["dice"],
                 train_metrics["iou"],
                 val_metrics["iou"],
-                val_joint,
             ]
         )
         save_epoch_log(output_dir / "epoch_log.csv", epoch_rows)
 
         print(
             f"Epoch {epoch:03d} "
-            f"| Train Acc: {train_metrics['accuracy']:.2f}% "
+            f"| Train Loss: {train_metrics['loss']:.4f} "
+            f"| Val Loss: {val_metrics['loss']:.4f} "
             f"| Val Acc: {val_metrics['accuracy']:.2f}% "
-            f"| Train Dice: {train_metrics['dice']:.4f} "
             f"| Val Dice: {val_metrics['dice']:.4f} "
-            f"| Val IoU: {val_metrics['iou']:.4f} "
-            f"| Joint: {val_joint:.4f}"
+            f"| Val IoU: {val_metrics['iou']:.4f}"
         )
 
-        current_scores = {
-            "accuracy": val_metrics["accuracy"],
-            "dice": val_metrics["dice"],
-            "joint": val_joint,
-        }
-        for name, score in current_scores.items():
-            if score > best_scores[name]:
-                best_scores[name] = score
-                torch.save(model.state_dict(), checkpoints[name])
+        if val_metrics["loss"] < best_val_loss:
+            best_val_loss = val_metrics["loss"]
+            torch.save(model.state_dict(), checkpoint_path)
 
-        if early_stopping.should_stop(val_joint):
+        if early_stopping.should_stop(val_metrics["loss"]):
             print(f"Early stopping at epoch {epoch}")
             break
 
     duration = time.time() - start_time
     model.load_state_dict(
-        torch.load(checkpoints["joint"], map_location=device, weights_only=True)
+        torch.load(checkpoint_path, map_location=device, weights_only=True)
     )
     test_metrics = run_epoch(
         model,
         loaders["test"],
         classification_criterion,
         segmentation_criterion,
-        args.segmentation_weight,
+        args.lambda_weight,
         args.aux_weight,
         device,
         description="Test",
@@ -512,11 +496,12 @@ def train(args):
         result_path,
         args,
         parameter_count,
-        best_scores,
+        best_val_loss,
         test_metrics,
         duration,
     )
 
+    print(f"Best validation loss: {best_val_loss:.4f}")
     print(f"Test accuracy: {test_metrics['accuracy']:.2f}%")
     print(f"Test AUC: {test_metrics['auc']:.4f}")
     print(f"Test Dice: {test_metrics['dice']:.4f}")
@@ -531,7 +516,13 @@ def parse_args():
     parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--width-mult", type=float, default=1.0)
-    parser.add_argument("--segmentation-weight", type=float, default=1.0)
+    parser.add_argument(
+        "--lambda",
+        dest="lambda_weight",
+        type=float,
+        default=0.8,
+        help="Weight on the segmentation loss; classification gets (1 - lambda).",
+    )
     parser.add_argument("--aux-weight", type=float, default=0.4)
     parser.add_argument(
         "--deep-supervision", choices=["true", "false"], default="true"

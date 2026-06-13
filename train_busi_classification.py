@@ -269,7 +269,7 @@ def train_one_run(args, device, image_size, use_cbam, run):
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=20, eta_min=1e-6
     )
-    early_stopping = EarlyStopping()
+    early_stopping = EarlyStopping(patience=args.patience)
 
     checkpoint_path = output_dir / "best_model.pt"
     epoch_rows = []
@@ -352,6 +352,7 @@ def parse_args():
     parser.add_argument("--cbam", choices=["true", "false", "both"], default="true")
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--epochs", type=int, default=70)
+    parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=0.0003)
