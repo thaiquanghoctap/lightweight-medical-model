@@ -1,0 +1,413 @@
+\documentclass[12pt,a4paper]{article}
+
+% =========================================================
+% PACKAGES
+% =========================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+
+\usepackage{geometry}
+\geometry{margin=2.35cm}
+
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+% =========================================================
+% COLORS
+% =========================================================
+\definecolor{mainblue}{HTML}{1F4E79}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{mainteal}{HTML}{117A65}
+\definecolor{lightteal}{HTML}{E8F6F3}
+\definecolor{mainorange}{HTML}{B9770E}
+\definecolor{lightorange}{HTML}{FEF5E7}
+\definecolor{maingray}{HTML}{34495E}
+\definecolor{lightgray}{HTML}{F4F6F7}
+\definecolor{mainred}{HTML}{A93226}
+\definecolor{lightred}{HTML}{FDEDEC}
+
+% =========================================================
+% HYPERREF
+% =========================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=mainblue,
+    citecolor=mainblue,
+    urlcolor=mainblue
+}
+
+% =========================================================
+% HEADER / FOOTER
+% =========================================================
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{mainblue}{Medical Image Augmentation Proposal}}
+\rhead{\textcolor{maingray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% =========================================================
+% SECTION STYLE
+% =========================================================
+\usepackage{titlesec}
+
+\titleformat{\section}
+  {\Large\bfseries\color{mainblue}}
+  {\thesection.}
+  {0.6em}
+  {}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{mainteal}}
+  {\thesubsection}
+  {0.6em}
+  {}
+
+% =========================================================
+% LIST STYLE
+% =========================================================
+\setlist[itemize]{topsep=4pt, itemsep=3pt, leftmargin=1.6em}
+\setlist[enumerate]{topsep=4pt, itemsep=3pt, leftmargin=1.8em}
+
+% =========================================================
+% TCOLORBOX STYLES
+% =========================================================
+\tcbset{
+    enhanced,
+    boxrule=0.8pt,
+    arc=2mm,
+    left=8pt,
+    right=8pt,
+    top=7pt,
+    bottom=7pt
+}
+
+\newtcolorbox{ideabox}[1]{
+    colback=lightblue,
+    colframe=mainblue,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{methodbox}[1]{
+    colback=lightteal,
+    colframe=mainteal,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{expectbox}[1]{
+    colback=lightorange,
+    colframe=mainorange,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{riskbox}[1]{
+    colback=lightred,
+    colframe=mainred,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+% =========================================================
+% TIKZ STYLE
+% =========================================================
+\tikzset{
+    levelbox/.style={
+        rectangle,
+        rounded corners=2mm,
+        draw=mainblue!80!black,
+        fill=lightblue,
+        thick,
+        align=center,
+        text width=3.1cm,
+        minimum height=1.15cm,
+        font=\small
+    },
+    arrow/.style={
+        -{Stealth[length=2.5mm]},
+        thick,
+        draw=maingray
+    }
+}
+
+% =========================================================
+% TITLE INFO
+% =========================================================
+\title{
+    \vspace{-1.2cm}
+    \textbf{\textcolor{mainblue}PROPOSAL NGHIÊN CỨU}}
+
+\author{
+    \textbf{Nhóm thực hiện}\\[0.3em]
+    Phạm Nhật Duy - 25C15038 \\
+    Lê Thanh Thái Quảng - 25C15058
+}
+
+\begin{document}
+
+% =========================================================
+% TITLE PAGE
+% =========================================================
+\maketitle
+
+
+% =========================================================
+% ABSTRACT
+% =========================================================
+\begin{ideabox}{Tóm tắt đề tài}
+Data augmentation là một kỹ thuật phổ biến trong huấn luyện mô hình học sâu cho ảnh y khoa, đặc biệt khi dữ liệu bị hạn chế hoặc mất cân bằng. Tuy nhiên, không phải phép biến đổi ảnh nào cũng phù hợp trong bối cảnh y khoa, vì một số augmentation có thể làm sai lệch đặc trưng bệnh lý hoặc làm mất thông tin quan trọng.
+
+Dựa trên nghiên cứu \textit{``Analyzing Data Augmentation for Medical Images: A Case Study in Ultrasound Images''}, đề tài này hướng đến việc phân tích có hệ thống ảnh hưởng của data augmentation đối với bài toán phân loại ảnh siêu âm vú. Nghiên cứu được triển khai theo hướng tăng dần: từ baseline đơn giản, đánh giá từng augmentation riêng lẻ, so sánh augmentation policy, đến thảo luận mở rộng sang ảnh X-ray.
+\end{ideabox}
+
+% =========================================================
+\section{Bối cảnh và động lực nghiên cứu}
+
+Trong các bài toán ảnh y khoa, mô hình học sâu thường gặp các khó khăn như dữ liệu gán nhãn hạn chế, mất cân bằng lớp và khác biệt giữa các nguồn thu thập. Data augmentation thường được dùng để cải thiện khả năng tổng quát hóa của mô hình.
+
+Tuy nhiên, khác với ảnh tự nhiên, ảnh y khoa chứa các đặc trưng liên quan trực tiếp đến bệnh lý. Một số phép biến đổi như crop mạnh, blur mạnh hoặc random erasing có thể làm mất vùng tổn thương hoặc làm giảm khả năng nhận diện bệnh. Vì vậy, augmentation cần được đánh giá một cách có kiểm soát thay vì sử dụng như một bước tiền xử lý mặc định.
+
+\begin{ideabox}{Ý tưởng cốt lõi}
+Đề tài không tập trung xây dựng kiến trúc mô hình mới, mà tập trung trả lời câu hỏi: \textit{augmentation nào thực sự hữu ích, augmentation nào không cần thiết, và augmentation nào có thể gây hại trong ảnh siêu âm y khoa?}
+\end{ideabox}
+
+% =========================================================
+\section{Câu hỏi và mục tiêu nghiên cứu}
+
+\subsection{Câu hỏi nghiên cứu}
+
+\begin{quote}
+\textit{Những chiến lược data augmentation nào giúp cải thiện hiệu năng phân loại ảnh siêu âm y khoa, và trong điều kiện nào chúng có thể làm giảm độ tin cậy của mô hình?}
+\end{quote}
+
+\subsection{Mục tiêu nghiên cứu}
+
+\begin{enumerate}[label=\textbf{O\arabic*.}]
+    \item Tái lập pipeline phân loại ảnh siêu âm vú dựa trên nghiên cứu gốc.
+    \item Đánh giá ảnh hưởng của từng nhóm augmentation phổ biến.
+    \item So sánh các augmentation policy thủ công, ngẫu nhiên và tự động.
+    \item Xác định các augmentation có lợi, trung tính hoặc có khả năng gây hại.
+    \item Đề xuất định hướng mở rộng framework sang ảnh X-ray như một bước nghiên cứu tiếp theo.
+\end{enumerate}
+
+% =========================================================
+\section{Phạm vi nghiên cứu}
+
+Trọng tâm chính của đề tài là bài toán phân loại ảnh siêu âm vú. Dataset chính dự kiến sử dụng là \textbf{BUSI}, gồm các lớp benign, malignant và normal. Nếu điều kiện cho phép, nhóm sẽ xem xét thêm \textbf{BUS-BRA} để đánh giá khả năng tổng quát hóa qua nguồn dữ liệu khác.
+
+Ảnh X-ray chỉ được xem là hướng mở rộng cuối cùng. Lý do là framework đánh giá augmentation có thể chuyển sang X-ray, nhưng cần điều chỉnh lại logic augmentation do ảnh X-ray có cấu trúc giải phẫu cố định hơn ảnh siêu âm.
+
+\begin{table}[H]
+\centering
+\caption{Phạm vi dữ liệu dự kiến}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{4cm} p{5.5cm} p{6.1cm}}
+\toprule
+\textbf{Dataset} & \textbf{Bài toán} & \textbf{Vai trò trong đề tài} \\
+\midrule
+BUSI & Phân loại benign, malignant, normal & Dataset chính cho baseline và augmentation analysis. \\
+BUS-BRA & Phân loại benign, malignant & Dùng cho kiểm tra robustness nếu đủ thời gian. \\
+Chest X-ray dataset & Phân loại bệnh lý X-ray & Chỉ là hướng mở rộng, không phải trọng tâm chính. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =========================================================
+\section{Kế hoạch triển khai theo từng mức độ}
+
+Nhóm sẽ tiếp cận đề tài theo hướng từ đơn giản đến nâng cao. Cách triển khai này giúp đảm bảo nhóm có thể hoàn thành được baseline trước, sau đó mới mở rộng sang các phân tích sâu hơn.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.95\textwidth}{!}{
+\begin{tikzpicture}[node distance=1.15cm and 1.2cm]
+    \node[levelbox] (l1) {\textbf{Level 1}\\Baseline};
+    \node[levelbox, right=of l1] (l2) {\textbf{Level 2}\\Single Augmentation};
+    \node[levelbox, right=of l2] (l3) {\textbf{Level 3}\\Policy Comparison};
+    \node[levelbox, right=of l3] (l4) {\textbf{Level 4}\\Robustness / X-ray};
+
+    \draw[arrow] (l1) -- (l2);
+    \draw[arrow] (l2) -- (l3);
+    \draw[arrow] (l3) -- (l4);
+\end{tikzpicture}
+}
+\caption{Quy trình triển khai tăng dần của đề tài.}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Các mức độ triển khai dự kiến}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{2.2cm} p{5.5cm} p{6.5cm}}
+\toprule
+\textbf{Mức độ} & \textbf{Nội dung} & \textbf{Kỳ vọng} \\
+\midrule
+Level 1 & Tái lập baseline phân loại ảnh siêu âm. & Có mốc so sánh ban đầu cho các thí nghiệm sau. \\
+Level 2 & Đánh giá từng augmentation riêng lẻ. & Xác định augmentation có lợi, trung tính hoặc gây hại. \\
+Level 3 & So sánh các augmentation policy. & Tìm policy phù hợp hơn cho ảnh siêu âm y khoa. \\
+Level 4 & Kiểm tra robustness và thảo luận mở rộng sang X-ray. & Đánh giá khả năng tổng quát hóa và đề xuất hướng phát triển tiếp theo. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =========================================================
+\section{Phương pháp tiếp cận tổng quát}
+
+\begin{methodbox}{Pipeline tổng quát}
+Nhóm sẽ sử dụng mô hình phân loại ảnh phổ biến như ResNet-18 hoặc EfficientNet-B0 làm baseline. Các mô hình sẽ được huấn luyện trên ảnh siêu âm vú với nhiều cấu hình augmentation khác nhau. Kết quả được so sánh bằng các metric phân loại và metric y khoa như AUC, F1-score, sensitivity và specificity.
+\end{methodbox}
+
+Các nhóm augmentation dự kiến bao gồm:
+
+\begin{table}[H]
+\centering
+\caption{Nhóm augmentation dự kiến đánh giá}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{p{5cm} p{9.5cm}}
+\toprule
+\textbf{Nhóm augmentation} & \textbf{Ví dụ} \\
+\midrule
+Biến đổi hình học & Rotation, flip, crop, scaling. \\
+Biến đổi cường độ ảnh & Brightness, contrast, gamma correction. \\
+Thêm nhiễu & Gaussian noise, speckle noise. \\
+Làm mờ / che khuất & Blur, random erasing, CutOut. \\
+Policy tự động & RandAugment, TrivialAugment. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =========================================================
+\section{Kỳ vọng kết quả}
+
+\begin{expectbox}{Kết quả kỳ vọng}
+Đề tài kỳ vọng chỉ ra được augmentation nào phù hợp với ảnh siêu âm, augmentation nào cần sử dụng thận trọng, và augmentation policy nào giúp mô hình tổng quát hóa tốt hơn mà vẫn giữ được tính hợp lý y khoa.
+\end{expectbox}
+
+Cụ thể, nhóm kỳ vọng:
+
+\begin{itemize}
+    \item Một số augmentation nhẹ như rotation nhỏ, thay đổi cường độ ảnh hoặc speckle noise có thể cải thiện hiệu năng mô hình.
+    \item Một số augmentation mạnh như crop mạnh, blur mạnh hoặc random erasing có thể gây hại nếu làm mất vùng tổn thương.
+    \item Policy tự động như RandAugment và TrivialAugment có thể hiệu quả, nhưng cần được kiểm soát trong bối cảnh ảnh y khoa.
+    \item Một augmentation policy có xét đến đặc thù ảnh siêu âm có thể cân bằng tốt hơn giữa hiệu năng và tính hợp lý y khoa.
+\end{itemize}
+
+% =========================================================
+\section{Đóng góp dự kiến}
+
+Đóng góp chính của đề tài gồm:
+
+\begin{enumerate}[label=\textbf{C\arabic*.}]
+    \item Hệ thống hóa quy trình đánh giá data augmentation cho ảnh siêu âm y khoa.
+    \item Cung cấp phân tích thực nghiệm về tác động của từng augmentation và từng policy.
+    \item Đưa ra khuyến nghị về nhóm augmentation nên dùng hoặc nên tránh trong ảnh siêu âm.
+    \item Bổ sung góc nhìn về tính an toàn và hợp lý của augmentation trong ảnh y khoa.
+    \item Đề xuất hướng mở rộng framework sang ảnh X-ray trong nghiên cứu tiếp theo.
+\end{enumerate}
+
+% =========================================================
+\section{Thành tích và kinh nghiệm của nhóm}
+
+Nhóm gồm 2 thành viên, có nền tảng phù hợp để triển khai đề tài theo hướng thực nghiệm, bao gồm xây dựng pipeline học sâu, xử lý ảnh, đọc hiểu paper và phân tích kết quả.
+
+\subsection{Thành viên 1: Phạm Nhật Duy}
+
+\begin{itemize}
+    \item Có kinh nghiệm trong triển khai mô hình học sâu Variational Autoencoder với dữ liệu sinh học single cell RNA sequencing.
+    \item Tác giả chính nghiên cứu: "Leveraging mutual information in Variational Autoencoders for improved dimensionality reduction of single-cell RNA sequencing data: The scInfoMaxVAE approach" công bố trên tạp chí Computational Biology and Chemistry (Q2).
+    \item Giải Ba Giải thưởng Sinh viên Nghiên cứu khoa học Eureka (Lĩnh vực khoa học Y Dược).
+\end{itemize}
+
+\subsection{Thành viên 2: Lê Thanh Thái Quảng}
+
+\begin{itemize}
+    \item Có kinh nghiệm nghiên cứu khoa học, bao gồm khảo sát tài liệu, đọc hiểu paper, xây dựng ý tưởng, thiết kế thí nghiệm và đánh giá kết quả.
+    \item Là tác giả bài báo ``Text-GCFExplainer: Global Counterfactual Explainer for Graph Neural Networks on Textual Data'', đã được submit tới hội nghị KES 2026 (Rank B) và hiện đang ở trạng thái \textit{Accept to Revision}.
+\end{itemize}
+
+% =========================================================
+\section{Lộ trình thực hiện}
+
+\begin{table}[H]
+\centering
+\caption{Lộ trình thực hiện dự kiến}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{2.5cm} p{6.5cm} p{6cm}}
+\toprule
+\textbf{Giai đoạn} & \textbf{Nội dung chính} & \textbf{Kết quả đầu ra} \\
+\midrule
+Giai đoạn 1 & Đọc paper, chuẩn bị dataset và xây dựng baseline. & Pipeline cơ bản và kết quả baseline. \\
+Giai đoạn 2 & Chạy thí nghiệm với từng augmentation riêng lẻ. & Bảng so sánh ảnh hưởng của từng augmentation. \\
+Giai đoạn 3 & So sánh các augmentation policy. & Nhận xét về policy phù hợp nhất. \\
+Giai đoạn 4 & Tổng hợp kết quả, phân tích hạn chế và đề xuất mở rộng sang X-ray. & Báo cáo hoàn chỉnh và hướng phát triển tiếp theo. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =========================================================
+\section{Hạn chế dự kiến}
+
+\begin{riskbox}{Các rủi ro và hạn chế}
+Kết quả của đề tài có thể phụ thuộc vào dataset được chọn, chất lượng nhãn và cách chia tập train/test. Ngoài ra, vì nhãn phân loại ở cấp ảnh không chỉ rõ vị trí tổn thương, việc đánh giá liệu augmentation có làm mất vùng bệnh hay không vẫn cần kết hợp phân tích trực quan.
+\end{riskbox}
+
+Một số hạn chế cụ thể:
+
+\begin{itemize}
+    \item Kết quả có thể phụ thuộc mạnh vào dataset được chọn.
+    \item Nhãn phân loại cấp ảnh không cho biết chính xác vị trí tổn thương.
+    \item Một số augmentation cần đánh giá trực quan để xác định có hợp lý về mặt y khoa hay không.
+    \item Mở rộng sang X-ray cần thiết kế lại tập augmentation an toàn vì đặc điểm ảnh X-ray khác ảnh siêu âm.
+\end{itemize}
+
+% =========================================================
+\section{Kết luận}
+
+Đề tài tập trung phân tích vai trò của data augmentation trong phân loại ảnh siêu âm y khoa. Thay vì xem augmentation là một bước xử lý mặc định, đề tài đặt mục tiêu đánh giá có hệ thống tác động của từng phép biến đổi và từng policy đến hiệu năng mô hình.
+
+Kết quả kỳ vọng là xác định được những augmentation phù hợp với ảnh siêu âm, chỉ ra các phép biến đổi nên sử dụng thận trọng, và đề xuất một hướng thiết kế augmentation policy có tính y khoa hơn. Sau khi hoàn thành trên ảnh siêu âm, framework này có thể được mở rộng sang modality khác như ảnh X-ray trong các nghiên cứu tiếp theo.
+
+% =========================================================
+\begin{thebibliography}{9}
+
+\bibitem{tupper2024}
+A. Tupper and C. Gagné,
+\textit{Analyzing Data Augmentation for Medical Images: A Case Study in Ultrasound Images},
+arXiv preprint arXiv:2403.09828, 2024.
+
+\bibitem{tupper2025}
+A. Tupper and C. Gagné,
+\textit{Revisiting Data Augmentation for Ultrasound Images},
+arXiv preprint arXiv:2501.13193, 2025.
+
+\bibitem{busidataset}
+W. Al-Dhabyani, M. Gomaa, H. Khaled, and A. Fahmy,
+\textit{Dataset of Breast Ultrasound Images},
+Data in Brief, 2020.
+
+\bibitem{randaugment}
+E. D. Cubuk et al.,
+\textit{RandAugment: Practical Automated Data Augmentation with a Reduced Search Space},
+CVPR Workshops, 2020.
+
+\bibitem{trivialaugment}
+S. G. Müller and F. Hutter,
+\textit{TrivialAugment: Tuning-free Yet State-of-the-Art Data Augmentation},
+ICCV, 2021.
+
+\end{thebibliography}
+
+\end{document}

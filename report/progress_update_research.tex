@@ -1,0 +1,1046 @@
+\documentclass[12pt,a4paper]{article}
+
+% =========================================================
+% PACKAGES
+% =========================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+
+\usepackage{geometry}
+\geometry{margin=2.35cm}
+
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc}
+\usepackage{titlesec}
+
+% =========================================================
+% COLORS
+% =========================================================
+\definecolor{mainblue}{HTML}{1F4E79}
+\definecolor{lightblue}{HTML}{EAF2F8}
+\definecolor{mainteal}{HTML}{117A65}
+\definecolor{lightteal}{HTML}{E8F6F3}
+\definecolor{mainorange}{HTML}{B9770E}
+\definecolor{lightorange}{HTML}{FEF5E7}
+\definecolor{maingray}{HTML}{34495E}
+\definecolor{lightgray}{HTML}{F4F6F7}
+\definecolor{mainred}{HTML}{A93226}
+\definecolor{lightred}{HTML}{FDEDEC}
+
+% =========================================================
+% HYPERREF
+% =========================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=mainblue,
+    citecolor=mainblue,
+    urlcolor=mainblue
+}
+
+\newcommand{\githubrepo}{\href{https://github.com/thaiquanghoctap/lightweight-medical-model}{\texttt{github.com/thaiquanghoctap/lightweight-medical-model}}}
+\newcommand{\resultdrive}{\href{https://drive.google.com/drive/folders/1ZFqnT5X12mwOahLquEp8JkauidLAaHGb}{Google Drive kết quả thực nghiệm}}
+\newcommand{\researchimgdir}{report_images/progress_update_research}
+
+% =========================================================
+% HEADER / FOOTER
+% =========================================================
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{mainblue}{Báo cáo cập nhật hướng nghiên cứu}}
+\rhead{\textcolor{maingray}{\thepage}}
+\setlength{\headheight}{15pt}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% =========================================================
+% SECTION STYLE
+% =========================================================
+\titleformat{\section}
+  {\Large\bfseries\color{mainblue}}
+  {\thesection.}
+  {0.6em}
+  {}
+
+\titleformat{\subsection}
+  {\large\bfseries\color{mainteal}}
+  {\thesubsection}
+  {0.6em}
+  {}
+
+% =========================================================
+% LIST STYLE
+% =========================================================
+\setlist[itemize]{topsep=4pt, itemsep=3pt, leftmargin=1.6em}
+\setlist[enumerate]{topsep=4pt, itemsep=3pt, leftmargin=1.8em}
+
+% =========================================================
+% TCOLORBOX STYLES
+% =========================================================
+\tcbset{
+    enhanced,
+    boxrule=0.8pt,
+    arc=2mm,
+    left=8pt,
+    right=8pt,
+    top=7pt,
+    bottom=7pt
+}
+
+\newtcolorbox{ideabox}[1]{
+    colback=lightblue,
+    colframe=mainblue,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{methodbox}[1]{
+    colback=lightteal,
+    colframe=mainteal,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{expectbox}[1]{
+    colback=lightorange,
+    colframe=mainorange,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+\newtcolorbox{riskbox}[1]{
+    colback=lightred,
+    colframe=mainred,
+    title=\textbf{#1},
+    fonttitle=\bfseries,
+}
+
+% =========================================================
+% TIKZ STYLE
+% =========================================================
+\tikzset{
+    dataNode/.style={
+        cylinder,
+        shape border rotate=90,
+        aspect=0.25,
+        draw=maingray!80!black,
+        fill=lightgray,
+        thick,
+        align=center,
+        text width=2.8cm,
+        minimum height=1.0cm,
+        font=\scriptsize
+    },
+    ioNode/.style={
+        trapezium,
+        trapezium left angle=70,
+        trapezium right angle=110,
+        draw=maingray!80!black,
+        fill=lightgray,
+        thick,
+        align=center,
+        text width=2.7cm,
+        minimum height=0.95cm,
+        font=\scriptsize
+    },
+    encoderNode/.style={
+        rectangle,
+        rounded corners=1mm,
+        draw=mainblue!85!black,
+        fill=lightblue,
+        thick,
+        align=center,
+        text width=2.55cm,
+        minimum height=0.92cm,
+        font=\scriptsize
+    },
+    attentionNode/.style={
+        diamond,
+        aspect=1.7,
+        draw=mainorange!85!black,
+        fill=lightorange,
+        thick,
+        align=center,
+        text width=2.25cm,
+        inner sep=1pt,
+        font=\scriptsize
+    },
+    attentionSmall/.style={
+        attentionNode,
+        aspect=1.45,
+        text width=1.65cm,
+        minimum height=0.82cm
+    },
+    decoderNode/.style={
+        rectangle,
+        rounded corners=1mm,
+        draw=mainteal!85!black,
+        fill=lightteal,
+        thick,
+        align=center,
+        text width=2.65cm,
+        minimum height=0.92cm,
+        font=\scriptsize
+    },
+    outputNode/.style={
+        ellipse,
+        draw=mainred!85!black,
+        fill=lightred,
+        thick,
+        align=center,
+        text width=2.5cm,
+        minimum height=0.95cm,
+        font=\scriptsize
+    },
+    auxNode/.style={
+        ellipse,
+        draw=mainorange!85!black,
+        fill=lightorange,
+        thick,
+        align=center,
+        text width=2.1cm,
+        minimum height=0.75cm,
+        font=\scriptsize
+    },
+    block/.style={
+        rectangle,
+        rounded corners=2mm,
+        draw=mainblue!80!black,
+        fill=lightblue,
+        thick,
+        align=center,
+        text width=3.1cm,
+        minimum height=1.0cm,
+        font=\small
+    },
+    methodblock/.style={
+        rectangle,
+        rounded corners=2mm,
+        draw=mainteal!80!black,
+        fill=lightteal,
+        thick,
+        align=center,
+        text width=3.4cm,
+        minimum height=1.0cm,
+        font=\small
+    },
+    orangeblock/.style={
+        rectangle,
+        rounded corners=2mm,
+        draw=mainorange!85!black,
+        fill=lightorange,
+        thick,
+        align=center,
+        text width=3.2cm,
+        minimum height=1.0cm,
+        font=\small
+    },
+    redblock/.style={
+        rectangle,
+        rounded corners=2mm,
+        draw=mainred!85!black,
+        fill=lightred,
+        thick,
+        align=center,
+        text width=3.1cm,
+        minimum height=1.0cm,
+        font=\small
+    },
+    arrow/.style={
+        -{Stealth[length=2.5mm]},
+        thick,
+        draw=maingray
+    },
+    skiparrow/.style={
+        -{Stealth[length=2.2mm]},
+        thick,
+        dashed,
+        draw=mainorange!85!black
+    }
+}
+
+\begin{document}
+
+\pagenumbering{gobble}
+
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+
+{\Large\bfseries TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN\par}
+\vspace{0.35cm}
+{\large\bfseries KHOA CÔNG NGHỆ THÔNG TIN\par}
+
+\vspace{2.4cm}
+
+{\large\bfseries Môn: LẬP TRÌNH CHO TRÍ TUỆ NHÂN TẠO\par}
+\vspace{0.35cm}
+{\large Giảng viên: PGS. TS. Trần Minh Triết\par}
+
+\vspace{2.4cm}
+
+{\LARGE\bfseries\textcolor{mainblue}{BÁO CÁO CẬP NHẬT HƯỚNG NGHIÊN CỨU}\par}
+\vspace{0.45cm}
+{\Large Lightweight Multi-task Learning for Breast Ultrasound Images\par}
+
+\vfill
+
+{\large\bfseries Nhóm thực hiện\par}
+\vspace{0.35cm}
+{\large Phạm Nhật Duy - 25C15038\par}
+{\large Lê Thanh Thái Quảng - 25C15058\par}
+
+\vfill
+
+{\large \today\par}
+\end{titlepage}
+
+\pagenumbering{arabic}
+
+% =========================================================
+\begin{methodbox}{Liên kết mã nguồn và kết quả thực nghiệm}
+\begin{itemize}
+    \item \textbf{GitHub}: \githubrepo.
+    \item \textbf{Google Drive}: \resultdrive.
+\end{itemize}
+\end{methodbox}
+
+% =========================================================
+\begin{ideabox}{Tóm tắt định hướng hiện tại}
+Báo cáo này trình bày hướng nghiên cứu hiện tại của nhóm sau giai đoạn prototype ban đầu. Thay vì mô tả dàn trải toàn bộ pipeline từ đầu, nội dung tập trung vào phần đã thay đổi và mở rộng: cơ sở từ các công trình liên quan, kiến trúc lightweight multi-task, các biến thể model mới và kết quả thực nghiệm gần nhất.
+
+Trọng tâm của báo cáo là làm rõ quá trình chuyển từ proposal dựa trên data augmentation sang lightweight multi-task learning: dùng MedNet cho classification, kết hợp thêm các ý tưởng segmentation từ CBAM-RIUNet/MK-UNet, sau đó đánh giá các biến thể R-CBAM MNet và MK-MNet trên BUSI. Phần augmentation từ proposal ban đầu được giữ lại như hướng cải tiến chọn lọc, cùng với Grad-CAM/XAI để hoàn thiện phân tích mô hình.
+\end{ideabox}
+
+% =========================================================
+\section{Bài toán nghiên cứu}
+
+\subsection{Bài toán hiện tại}
+
+Bài toán nghiên cứu hiện tại được xác định rõ là:
+
+\begin{methodbox}{Phát biểu bài toán}
+Xây dựng và đánh giá các mô hình lightweight multi-task cho ảnh siêu âm vú BUSI, trong đó mô hình vừa phân loại ảnh thành ba lớp \textit{benign}, \textit{malignant}, \textit{normal}, vừa phân đoạn vùng tổn thương dựa trên mask đi kèm.
+\end{methodbox}
+
+Về mặt đầu vào và đầu ra, với một ảnh siêu âm \(x\), mô hình cần sinh đồng thời:
+
+\[
+(\mathbf{z}_{cls}, \mathbf{z}_{seg}) = f_{\theta}(x)
+\]
+
+Trong đó \(\mathbf{z}_{cls}\) là logits cho ba lớp bệnh và \(\mathbf{z}_{seg}\) là logits mask nhị phân cho vùng tổn thương.
+
+\subsection{Dữ liệu và ý nghĩa hai nhánh học}
+
+BUSI là bộ dữ liệu ảnh siêu âm vú gồm ba nhóm ảnh: \textit{benign}, \textit{malignant} và \textit{normal}. Ngoài nhãn phân loại ở cấp ảnh, các mẫu có tổn thương còn đi kèm mask vùng bệnh. Vì vậy, dữ liệu không chỉ cho biết ảnh thuộc lớp nào, mà còn cho biết vùng nào trong ảnh liên quan đến tổn thương.
+
+Trong báo cáo này, nhánh classification trả lời câu hỏi \textit{ảnh thuộc loại nào}, còn nhánh segmentation trả lời câu hỏi \textit{mô hình đang định vị vùng tổn thương ở đâu}. Việc kết hợp hai nhánh trong cùng một mô hình giúp kiểm tra cả năng lực dự đoán nhãn và khả năng học đặc trưng không gian của vùng bệnh, thay vì chỉ báo cáo accuracy ở cấp ảnh.
+
+\subsection{Lý do điều chỉnh từ proposal ban đầu}
+
+Proposal ban đầu tập trung vào câu hỏi data augmentation: augmentation nào có lợi, augmentation nào trung tính và augmentation nào có thể gây hại cho ảnh siêu âm y khoa. Tuy nhiên, khi chuyển sang thực nghiệm, hướng này cần nhiều lần train cho từng augmentation, từng tổ hợp và từng policy. Với tài nguyên hiện có, việc tái hiện đầy đủ thiết kế từ \textit{Analyzing Data Augmentation for Medical Images: A Case Study in Ultrasound Images} là chưa phù hợp.
+
+Điều chỉnh hiện tại không rời khỏi bài toán ảnh siêu âm vú. Nhóm vẫn giữ BUSI làm dataset chính và vẫn giữ classification là mục tiêu trung tâm. Điểm thay đổi là nhóm ưu tiên xây dựng một mô hình lightweight có thể học tốt hơn từ dữ liệu hiện có, đồng thời tận dụng mask BUSI để kiểm tra mô hình có học vùng tổn thương hay không.
+
+\subsection{Mục tiêu nghiên cứu}
+
+Các mục tiêu hiện tại gồm:
+
+\begin{enumerate}
+    \item Xây dựng lightweight backbone cho BUSI dựa trên tinh thần MedNet.
+    \item Mở rộng mô hình từ classification đơn nhiệm sang multi-task classification + segmentation.
+    \item So sánh các biến thể segmentation decoder lấy cảm hứng từ CBAM-RIUNet và MK-UNet.
+    \item Chuẩn bị bổ sung data augmentation chọn lọc để nối lại hướng proposal ban đầu.
+    \item Bổ sung Grad-CAM/XAI để đánh giá mô hình classification có tập trung vào vùng tổn thương hay không.
+\end{enumerate}
+
+% =========================================================
+\section{Các công trình liên quan}
+
+\subsection{Nguồn gốc từ data augmentation}
+
+\textit{Analyzing Data Augmentation for Medical Images: A Case Study in Ultrasound Images} là cơ sở của proposal ban đầu. Công trình này chỉ ra rằng data augmentation có thể cải thiện khả năng tổng quát hóa trong medical image classification, nhưng các phép biến đổi cần được đánh giá cẩn thận vì ảnh y khoa chứa thông tin bệnh lý nhạy cảm. Với ảnh siêu âm, crop mạnh, blur mạnh hoặc random erasing có thể làm mất vùng tổn thương hoặc làm sai lệch tín hiệu bệnh.
+
+Khoảng trống từ hướng này là: để kết luận augmentation nào tốt hoặc gây hại, cần nhiều cấu hình huấn luyện và nhiều phép so sánh. Trong điều kiện tài nguyên giới hạn, nhóm chuyển augmentation từ trục chính thành một nhánh cải tiến chọn lọc sau khi baseline lightweight/multi-task ổn định.
+
+\subsection{MedNet cho classification nhẹ}
+
+\textit{MedNet: a lightweight attention-augmented CNN for medical image classification} đề xuất MedNet, một lightweight CNN cho medical image classification. Các ý tưởng chính gồm depthwise separable convolution, residual connection và CBAM attention. Đây là cơ sở để nhóm thay thế hướng backbone nặng như ResNet-18/EfficientNet-B0 bằng một backbone phù hợp hơn với tài nguyên hiện có.
+
+Tuy nhiên, MedNet gốc tập trung vào classification. Trong bài toán BUSI, dataset có cả nhãn lớp và mask tổn thương, nên nếu chỉ dùng MedNet như classifier thì chưa tận dụng hết thông tin có sẵn.
+
+\subsection{CBAM-RIUNet và MK-UNet cho segmentation}
+
+CBAM-RIUNet được dùng như cơ sở ý tưởng cho một nhánh segmentation có decoder theo hướng residual và inception, kết hợp CBAM attention. Vì nhóm không sử dụng public code gốc, phần triển khai hiện tại nên được hiểu là phỏng theo ý tưởng thiết kế: dùng CBAM để refine skip features và dùng residual depthwise-separable style trong decoder.
+
+\textit{MK-UNet: Multi-kernel Lightweight CNN for Medical Image Segmentation} đề xuất MK-UNet cho medical image segmentation. Công trình này nhấn mạnh multi-kernel depthwise convolution, multi-kernel inverted residual, channel attention, spatial attention và grouped attention gate. Điểm mạnh của MK-UNet là khả năng đạt hiệu quả segmentation với số tham số rất thấp.
+
+\subsection{Các nguyên lý kỹ thuật rút ra từ các công trình liên quan}
+
+Từ ba công trình trên, nhóm rút ra một số nguyên lý kỹ thuật dùng trực tiếp cho thiết kế hiện tại.
+
+\subsubsection*{Depthwise separable convolution}
+
+MedNet sử dụng depthwise separable convolution để giảm chi phí so với convolution chuẩn. Với kernel \(K \times K\), input channel \(C_{in}\), output channel \(C_{out}\), convolution chuẩn cần xấp xỉ:
+
+\[
+K^2 C_{in} C_{out}
+\]
+
+tham số. Depthwise separable convolution tách phép tính thành depthwise convolution theo từng kênh và pointwise convolution \(1 \times 1\), nên số tham số xấp xỉ:
+
+\[
+K^2 C_{in} + C_{in} C_{out}
+\]
+
+Cách tách này phù hợp với bài toán hiện tại vì ảnh BUSI nhỏ, dữ liệu không lớn, trong khi nhóm cần mô hình đủ nhẹ để có thể thử nhiều cấu hình train.
+
+\subsubsection*{CBAM attention}
+
+CBAM gồm hai bước attention nối tiếp: channel attention và spatial attention. Channel attention giúp mô hình học kênh đặc trưng nào quan trọng, còn spatial attention giúp mô hình học vùng không gian nào đáng chú ý. Trong repo hiện tại, CBAM được dùng trong backbone MedNet và tiếp tục được dùng để refine skip features ở R-CBAM MNet.
+
+\[
+F' = M_c(F) \otimes F,\qquad
+F'' = M_s(F') \otimes F'
+\]
+
+Trong đó \(M_c\) là channel attention, \(M_s\) là spatial attention và \(\otimes\) là phép nhân theo phần tử. Với ảnh siêu âm, cơ chế này hợp lý vì vùng tổn thương thường chỉ chiếm một phần nhỏ ảnh và có biên/texture không rõ.
+
+\subsubsection*{Multi-kernel và U-shaped decoder}
+
+MK-UNet nhấn mạnh hai ý tưởng: U-shaped encoder-decoder với skip connection và multi-kernel depthwise convolution. Skip connection giúp decoder khôi phục thông tin không gian bị mất khi encoder giảm resolution, còn multi-kernel cho phép model nhìn đặc trưng ở nhiều receptive field khác nhau.
+
+Trong MK-MNet, nhóm không dùng MK-UNet nguyên bản mà đưa các ý tưởng chính vào decoder multi-task: multi-kernel inverted residual, channel/spatial attention, grouped attention gate và deep supervision. Nhờ đó, model vừa giữ classification head từ MedNet, vừa có segmentation decoder nhẹ hơn và có thể scale bằng \texttt{width\_mult}.
+
+\subsection{Khoảng trống dẫn đến bài toán hiện tại}
+
+Từ các công trình trên, khoảng trống nghiên cứu của nhóm có thể tóm tắt như sau:
+
+\begin{itemize}
+    \item \textit{Analyzing Data Augmentation for Medical Images: A Case Study in Ultrasound Images} cung cấp động lực ban đầu, nhưng full policy comparison tốn nhiều tài nguyên.
+    \item MedNet cung cấp một classification backbone nhẹ, nhưng chưa khai thác mask segmentation của BUSI.
+    \item CBAM-RIUNet/MK-UNet cung cấp ý tưởng segmentation, nhưng chưa trực tiếp giải quyết bài toán multi-task BUSI với classification và segmentation trong cùng một mô hình.
+    \item Vì vậy, hướng hiện tại là kết hợp MedNet backbone với các segmentation decoder nhẹ để tạo mô hình multi-task phù hợp tài nguyên.
+\end{itemize}
+
+% =========================================================
+\section{Phương pháp}
+
+\subsection{Tổng quan pipeline}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.60\textwidth}{!}{
+\begin{tikzpicture}[node distance=0.80cm and 1.15cm]
+    \node[dataNode] (data) {\textbf{BUSI}\\image + label + mask};
+    \node[decoderNode, below=of data] (prep) {\textbf{Preprocess}\\resize, normalize\\sync image-mask};
+    \node[encoderNode, below=of prep] (model) {\textbf{Lightweight}\\multi-task model};
+    \node[ioNode, below left=0.90cm and 0.75cm of model] (cls) {\textbf{Class logits}\\benign / malignant / normal};
+    \node[ioNode, below right=0.90cm and 0.75cm of model] (seg) {\textbf{Mask logits}\\binary lesion map};
+    \node[auxNode, below=0.75cm of cls] (evalcls) {\textbf{Cls metrics}\\Acc, AUC, F1};
+    \node[auxNode, below=0.75cm of seg] (evalseg) {\textbf{Seg metrics}\\Dice, IoU};
+    \coordinate (evalmid) at ($(evalcls)!0.5!(evalseg)$);
+    \node[outputNode, below=0.95cm of evalmid] (xai) {\textbf{Next}\\Grad-CAM\\selected aug.};
+
+    \draw[arrow] (data) -- (prep);
+    \draw[arrow] (prep) -- (model);
+    \draw[arrow] (model.south) -- (cls.north);
+    \draw[arrow] (model.south) -- (seg.north);
+    \draw[arrow] (cls) -- (evalcls);
+    \draw[arrow] (seg) -- (evalseg);
+    \draw[arrow] (evalcls.south) -- ([xshift=-10pt]xai.north);
+    \draw[arrow] (evalseg.south) -- ([xshift=10pt]xai.north);
+\end{tikzpicture}
+}
+\caption{Pipeline nghiên cứu hiện tại: từ dữ liệu BUSI, mô hình multi-task tạo đồng thời class logits và mask logits, sau đó đánh giá classification/segmentation và chuẩn bị cho Grad-CAM cùng augmentation chọn lọc.}
+\end{figure}
+
+\subsection{Model construction}
+
+Phần model hiện tại gồm một shared backbone lấy cảm hứng từ MedNet và các segmentation decoder khác nhau. Backbone tạo feature maps nhiều mức, classification head dùng encoded feature cuối cùng, còn segmentation decoder dùng skip connections để tái tạo mask.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{
+\begin{tikzpicture}[node distance=0.85cm and 0.72cm]
+    \node[ioNode] (input) {\textbf{Input}\\BUSI image};
+    \node[encoderNode, right=of input] (s1) {\textbf{S1}\\ResidualDSC\\CBAM, 64};
+    \node[encoderNode, right=of s1] (s2) {\textbf{S2}\\ResidualDSC\\CBAM, 128};
+    \node[encoderNode, right=of s2] (s3) {\textbf{S3}\\ResidualDSC\\CBAM, 256};
+    \node[encoderNode, right=of s3] (s4) {\textbf{S4}\\ResidualDSC\\CBAM, 512};
+    \node[encoderNode, right=of s4] (s5) {\textbf{S5}\\ResidualDSC\\CBAM, 1024};
+
+    \node[decoderNode, below=1.25cm of s4] (d4) {\textbf{D4}\\Up + concat S4\\Conv \(3\times3\)};
+    \node[decoderNode, below=1.25cm of s3] (d3) {\textbf{D3}\\Up + concat S3\\Conv \(3\times3\)};
+    \node[decoderNode, below=1.25cm of s2] (d2) {\textbf{D2}\\Up + concat S2\\Conv \(3\times3\)};
+    \node[decoderNode, below=1.25cm of s1] (d1) {\textbf{D1}\\Up + concat S1\\Conv \(3\times3\)};
+
+    \node[outputNode, above=1.0cm of s5] (clsout) {\textbf{Class logits}\\GAP + Dropout\\FC 1024-256-3};
+    \node[outputNode, left=of d1] (segout) {\textbf{Mask logits}\\\(1\times1\) conv\\resize input};
+
+    \draw[arrow] (input) -- (s1);
+    \draw[arrow] (s1) -- (s2);
+    \draw[arrow] (s2) -- (s3);
+    \draw[arrow] (s3) -- (s4);
+    \draw[arrow] (s4) -- (s5);
+    \draw[arrow] (s5) -- (clsout);
+
+    \draw[arrow] (s5.south) |- (d4.east);
+    \draw[arrow] (d4) -- (d3);
+    \draw[arrow] (d3) -- (d2);
+    \draw[arrow] (d2) -- (d1);
+    \draw[arrow] (d1) -- (segout);
+
+    \draw[skiparrow] (s4) -- (d4);
+    \draw[skiparrow] (s3) -- (d3);
+    \draw[skiparrow] (s2) -- (d2);
+    \draw[skiparrow] (s1) -- (d1);
+\end{tikzpicture}
+}
+\caption{Kiến trúc shared MedNet-style multi-task baseline. Encoder gồm 5 \texttt{ResidualDSCBAMBlock}; decoder segmentation có 4 block upsample-concat theo skip connection tương ứng.}
+\end{figure}
+
+\subsubsection*{Backbone MedNet-style}
+
+Backbone hiện tại là \texttt{ResidualCBAMBackbone}. Mỗi stage gồm hai depthwise separable convolution, một residual shortcut và CBAM nếu bật attention. Các stage giảm dần kích thước không gian và tăng số kênh, từ đó tạo đặc trưng mức thấp ở đầu mạng và đặc trưng ngữ nghĩa cao ở cuối mạng.
+
+\begin{table}[H]
+\centering
+\caption{Các stage chính của shared backbone}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{2.2cm} p{2.4cm} p{2.6cm} p{6.8cm}}
+\toprule
+\textbf{Stage} & \textbf{Stride} & \textbf{Channel gốc} & \textbf{Vai trò} \\
+\midrule
+Stage 1 & 1 & 64 & Giữ nhiều thông tin biên và texture mức thấp, dùng làm skip feature cuối của decoder. \\
+Stage 2 & 2 & 128 & Giảm resolution, bắt đầu học đặc trưng trung gian. \\
+Stage 3 & 2 & 256 & Mã hóa cấu trúc tổn thương ở mức trung gian. \\
+Stage 4 & 2 & 512 & Cung cấp skip feature giàu ngữ nghĩa cho decoder. \\
+Stage 5 & 2 & 1024 & Encoded feature cuối, dùng cho classification head và làm đầu vào decoder. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Với MK-MNet, số channel trên không cố định mà được nhân với \texttt{width\_mult}. Ví dụ, \texttt{width\_mult}=0.25 tạo các stage xấp xỉ 16, 32, 64, 128, 256 channel, giúp giảm số tham số từ mức vài triệu xuống khoảng 0.63M trong cấu hình đã chạy.
+
+\subsubsection*{Classification head}
+
+Nhánh classification giống tinh thần MedNet: encoded feature cuối được đưa qua adaptive average pooling để tạo vector toàn cục, sau đó đi qua dropout và hai fully connected layer. Cách này phù hợp với classification cấp ảnh vì mô hình cần quyết định toàn cục ảnh thuộc lớp \textit{benign}, \textit{malignant} hay \textit{normal}.
+
+\[
+\mathbf{z}_{cls}
+= W_2 \, \mathrm{Dropout}\left(W_1 \, \mathrm{GAP}(F_5)\right)
+\]
+
+Trong đó \(F_5\) là feature map cuối backbone. Dropout được dùng để giảm overfitting trên BUSI vì dataset nhỏ và mất cân bằng.
+
+\subsubsection*{Decoder segmentation cơ bản}
+
+Decoder cơ bản trong \texttt{MedNetSegmentation} và \texttt{MedNetMultiTask} có bốn block. Mỗi block upsample feature hiện tại, concatenate với skip feature cùng mức, rồi dùng hai convolution \(3 \times 3\). Cuối cùng, một convolution \(1 \times 1\) tạo mask logit một kênh.
+
+\[
+F^{dec}_{i}
+= \phi\left(
+\mathrm{Concat}(
+\mathrm{Up}(F^{dec}_{i+1}), F^{skip}_{i})
+\right)
+\]
+
+Thiết kế này giữ tinh thần U-Net: encoder học ngữ nghĩa, skip connection giữ chi tiết không gian, decoder tái tạo mask.
+
+\subsubsection*{R-CBAM MNet}
+
+R-CBAM MNet là biến thể kết hợp MedNet backbone với ý tưởng segmentation theo hướng CBAM-RIUNet. Điểm quan trọng là backbone vẫn dùng \texttt{ResidualDSCBAMBlock}, còn decoder không sao chép block MedNet nguyên xi. Decoder dùng CBAM để refine skip features và dùng residual inception depthwise separable block để xử lý đặc trưng sau khi upsample.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{
+\begin{tikzpicture}[node distance=0.72cm and 0.72cm]
+    \node[ioNode] (input) {\textbf{Input}\\BUSI};
+    \node[encoderNode, right=of input] (s1) {S1\\64};
+    \node[encoderNode, right=of s1] (s2) {S2\\128};
+    \node[encoderNode, right=of s2] (s3) {S3\\256};
+    \node[encoderNode, right=of s3] (s4) {S4\\512};
+    \node[encoderNode, right=of s4] (s5) {S5\\1024};
+
+    \node[outputNode, above=0.95cm of s5] (cls) {\textbf{Class logits}\\GAP + FC};
+
+    \node[attentionSmall, below=0.85cm of s1] (a1) {CBAM\\skip 1};
+    \node[attentionSmall, below=0.85cm of s2] (a2) {CBAM\\skip 2};
+    \node[attentionSmall, below=0.85cm of s3] (a3) {CBAM\\skip 3};
+    \node[attentionSmall, below=0.85cm of s4] (a4) {CBAM\\skip 4};
+
+    \node[decoderNode, below=1.05cm of a4] (d4) {\textbf{D4}\\reduce ch.\\concat + R-Inc DSC};
+    \node[decoderNode, below=1.05cm of a3] (d3) {\textbf{D3}\\reduce ch.\\concat + R-Inc DSC};
+    \node[decoderNode, below=1.05cm of a2] (d2) {\textbf{D2}\\reduce ch.\\concat + R-Inc DSC};
+    \node[decoderNode, below=1.05cm of a1] (d1) {\textbf{D1}\\reduce ch.\\concat + R-Inc DSC};
+    \node[outputNode, left=of d1] (mask) {\textbf{Mask logits}\\\(1\times1\) conv\\resize};
+
+    \draw[arrow] (input) -- (s1);
+    \draw[arrow] (s1) -- (s2);
+    \draw[arrow] (s2) -- (s3);
+    \draw[arrow] (s3) -- (s4);
+    \draw[arrow] (s4) -- (s5);
+    \draw[arrow] (s5) -- (cls);
+
+    \draw[skiparrow] (s1) -- (a1);
+    \draw[skiparrow] (s2) -- (a2);
+    \draw[skiparrow] (s3) -- (a3);
+    \draw[skiparrow] (s4) -- (a4);
+    \draw[skiparrow] (a1) -- (d1);
+    \draw[skiparrow] (a2) -- (d2);
+    \draw[skiparrow] (a3) -- (d3);
+    \draw[skiparrow] (a4) -- (d4);
+
+    \draw[arrow] (s5.south) |- (d4.east);
+    \draw[arrow] (d4) -- (d3);
+    \draw[arrow] (d3) -- (d2);
+    \draw[arrow] (d2) -- (d1);
+    \draw[arrow] (d1) -- (mask);
+\end{tikzpicture}
+}
+\caption{Kiến trúc R-CBAM MNet. Mô hình giữ MedNet encoder và classification head, bổ sung CBAM riêng trên skip features trước khi đưa vào decoder Residual Inception Depthwise Separable Convolution.}
+\end{figure}
+
+Cấu trúc này giữ cơ chế attention nhất quán với MedNet, nhưng tăng khả năng segmentation bằng decoder nhiều kernel \(1 \times 1\), \(3 \times 3\), \(5 \times 5\). Nhánh này phù hợp khi nhóm muốn một biến thể vẫn gần MedNet/CBAM nhưng mạnh hơn decoder cơ bản.
+
+\subsubsection*{MK-MNet}
+
+MK-MNet là biến thể kết hợp MedNet backbone với decoder theo hướng MK-UNet. Khác với R-CBAM MNet, decoder MK-MNet dùng channel attention, spatial attention, multi-kernel inverted residual và grouped attention gate. Ngoài ra, model có deep supervision thông qua các auxiliary segmentation heads ở nhiều mức decoder.
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{
+\begin{tikzpicture}[node distance=0.72cm and 0.58cm]
+    \node[ioNode] (input) {\textbf{Input}\\BUSI};
+    \node[encoderNode, right=of input] (s1) {S1\\\(c_1\)};
+    \node[encoderNode, right=of s1] (s2) {S2\\\(c_2\)};
+    \node[encoderNode, right=of s2] (s3) {S3\\\(c_3\)};
+    \node[encoderNode, right=of s3] (s4) {S4\\\(c_4\)};
+    \node[encoderNode, right=of s4] (s5) {S5\\\(c_5\)};
+
+    \node[outputNode, above=0.95cm of s5] (cls) {\textbf{Class logits}\\GAP + FC};
+
+    \node[decoderNode, below=1.35cm of s4] (b1) {\textbf{DB1}\\CA/SA + MKIR\\Up + GAG(S4)};
+    \node[decoderNode, below=1.35cm of s3] (b2) {\textbf{DB2}\\CA/SA + MKIR\\Up + GAG(S3)};
+    \node[decoderNode, below=1.35cm of s2] (b3) {\textbf{DB3}\\CA/SA + MKIR\\Up + GAG(S2)};
+    \node[decoderNode, below=1.35cm of s1] (b4) {\textbf{DB4}\\CA/SA + MKIR\\Up + GAG(S1)};
+
+    \node[auxNode, below=0.85cm of b1] (aux1) {Aux mask\\from DB1};
+    \node[auxNode, below=0.85cm of b2] (aux2) {Aux mask\\from DB2};
+    \node[auxNode, below=0.85cm of b3] (aux3) {Aux mask\\from DB3};
+    \node[outputNode, left=of b4] (mask) {\textbf{Main mask}\\\(1\times1\) conv\\resize};
+
+    \node[attentionNode, above=0.75cm of s2] (scale) {\texttt{width\_mult}\\scales\\\(c_1..c_5\)};
+
+    \draw[arrow] (input) -- (s1);
+    \draw[arrow] (s1) -- (s2);
+    \draw[arrow] (s2) -- (s3);
+    \draw[arrow] (s3) -- (s4);
+    \draw[arrow] (s4) -- (s5);
+    \draw[arrow] (s5) -- (cls);
+
+    \draw[arrow] (s5.south) |- (b1.east);
+    \draw[arrow] (b1) -- (b2);
+    \draw[arrow] (b2) -- (b3);
+    \draw[arrow] (b3) -- (b4);
+    \draw[arrow] (b4) -- (mask);
+
+    \draw[skiparrow] (s4) -- (b1);
+    \draw[skiparrow] (s3) -- (b2);
+    \draw[skiparrow] (s2) -- (b3);
+    \draw[skiparrow] (s1) -- (b4);
+
+    \draw[skiparrow] (b1) -- (aux1);
+    \draw[skiparrow] (b2) -- (aux2);
+    \draw[skiparrow] (b3) -- (aux3);
+    \draw[skiparrow] (scale) -- (s2);
+\end{tikzpicture}
+}
+\caption{Kiến trúc MK-MNet. Encoder là MedNet được scale bởi \texttt{width\_mult}; decoder dùng các block theo MK-UNet style gồm channel/spatial attention, multi-kernel inverted residual và grouped attention gate, kèm auxiliary heads khi bật deep supervision.}
+\end{figure}
+
+Thành phần MKIR trong MK-MNet thực hiện expand bằng pointwise convolution, xử lý song song bằng depthwise convolution nhiều kernel, shuffle channel, rồi project về số channel đầu ra. Ý tưởng này giúp model nhìn đồng thời chi tiết nhỏ và cấu trúc lớn hơn của vùng tổn thương. Grouped attention gate dùng tín hiệu decoder để lọc skip feature, giúp giảm nhiễu từ background siêu âm.
+
+\subsection{Các biến thể model}
+
+\begin{table}[H]
+\centering
+\caption{Các biến thể model trong repo hiện tại}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{3.2cm} p{5.5cm} p{5.8cm}}
+\toprule
+\textbf{Model} & \textbf{Ý tưởng chính} & \textbf{Vai trò trong nghiên cứu} \\
+\midrule
+MedNet & Backbone lightweight cho classification, gồm residual depthwise separable conv và CBAM. & Baseline classification và nền encoder cho các model BUSI. \\
+MedNetMultiTask & Shared MedNet backbone + classification head + decoder segmentation cơ bản. & Prototype multi-task đầu tiên. \\
+R-CBAM MNet & MedNet backbone + CBAM trên skip features + residual inception depthwise separable decoder. & Biến thể multi-task theo hướng CBAM-RIUNet, khoảng 6.5M params. \\
+MK-MNet & MedNet backbone + MK-UNet style decoder gồm multi-kernel inverted residual, channel/spatial attention và grouped gate. & Biến thể multi-task có thể scale bằng \texttt{width\_mult}, khoảng 0.63M--8.51M params. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cải thiện so với các công trình nền}
+
+\begin{methodbox}{Điểm cải thiện/điều chỉnh của nhóm}
+Nhóm không chỉ sao chép một công trình đơn lẻ. Hướng hiện tại kết hợp MedNet cho classification backbone, CBAM-RIUNet/MK-UNet cho segmentation decoder, và điều chỉnh thành bài toán multi-task trên BUSI.
+\end{methodbox}
+
+\begin{itemize}
+    \item \textbf{So với MedNet}: MedNet gốc tập trung classification. Nhóm mở rộng sang BUSI multi-task bằng cách thêm decoder segmentation và loss kết hợp.
+    \item \textbf{So với CBAM-RIUNet}: nhóm không dùng public code gốc mà phỏng theo ý tưởng residual + CBAM. R-CBAM MNet dùng MedNet backbone, CBAM trên skip features và residual inception depthwise separable decoder.
+    \item \textbf{So với MK-UNet}: MK-UNet gốc là segmentation model. Nhóm đưa ý tưởng MK decoder vào multi-task model, đồng thời thêm classification head và tham số \texttt{width\_mult} để scale channel của MedNet backbone.
+    \item \textbf{So với proposal augmentation ban đầu}: augmentation không bị loại bỏ, nhưng được chuyển thành nhánh chọn lọc sau khi baseline multi-task ổn định.
+\end{itemize}
+
+\subsection{Workflow train}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.62\textwidth}{!}{
+\begin{tikzpicture}[node distance=0.85cm and 1.15cm]
+    \node[dataNode] (load) {Train batch\\image + label + mask};
+    \node[decoderNode, below=of load] (aug) {Sync augmentation\\image-mask};
+    \node[encoderNode, below=of aug] (forward) {Forward\\multi-task model};
+    \node[outputNode, below left=0.95cm and 0.70cm of forward] (clsloss) {Focal Loss\\classification};
+    \node[outputNode, below right=0.95cm and 0.70cm of forward] (segloss) {BCE/Dice Loss\\segmentation};
+    \coordinate (lossmid) at ($(clsloss)!0.5!(segloss)$);
+    \node[auxNode, below=1.05cm of lossmid] (total) {Weighted\\total loss};
+    \node[decoderNode, below=of total] (update) {Backprop\\AdamW};
+    \node[auxNode, below=of update] (save) {Validation\\checkpoint};
+
+    \draw[arrow] (load) -- (aug);
+    \draw[arrow] (aug) -- (forward);
+    \draw[arrow] (forward.south) -- (clsloss.north);
+    \draw[arrow] (forward.south) -- (segloss.north);
+    \draw[arrow] (clsloss.south) -- ([xshift=-12pt]total.north);
+    \draw[arrow] (segloss.south) -- ([xshift=12pt]total.north);
+    \draw[arrow] (total) -- (update);
+    \draw[arrow] (update) -- (save);
+\end{tikzpicture}
+}
+\caption{Workflow train multi-task: classification loss và segmentation loss cùng cập nhật shared backbone.}
+\end{figure}
+
+Với các model multi-task, tổng loss được viết tổng quát:
+
+\[
+\mathcal{L}_{total}
+= (1 - \lambda)\mathcal{L}_{cls}
++ \lambda\mathcal{L}_{seg}
++ \alpha\mathcal{L}_{aux}
+\]
+
+Trong đó \(\mathcal{L}_{aux}\) chỉ áp dụng cho các biến thể có deep supervision như MK-MNet. Với classification, nhóm dùng Focal Loss để giảm ảnh hưởng của các mẫu dễ và tập trung hơn vào các mẫu khó:
+
+\[
+\mathcal{L}_{focal}
+= - \alpha_t (1 - p_t)^\gamma \log(p_t)
+\]
+
+Với segmentation, các lần chạy R-CBAM MNet và MK-MNet dùng kết hợp BCEWithLogitsLoss và Dice Loss:
+
+\[
+\mathcal{L}_{seg}
+= \mathcal{L}_{BCE}
++ \left(
+1 -
+\frac{2|P \cap M| + \epsilon}{|P| + |M| + \epsilon}
+\right)
+\]
+
+Trong đó \(P\) là mask dự đoán sau sigmoid, \(M\) là mask thật và \(\epsilon\) là hệ số làm trơn. Cách kết hợp BCE + Dice hợp lý cho BUSI vì vùng tổn thương thường nhỏ so với nền ảnh, nên chỉ dùng BCE có thể khiến mô hình thiên về background.
+
+\subsection{Workflow test}
+
+\begin{figure}[H]
+\centering
+\resizebox{0.98\textwidth}{!}{
+\begin{tikzpicture}[node distance=1.05cm and 1.10cm]
+    \node[dataNode] (ckpt) {Checkpoint\\best model};
+    \node[ioNode, right=of ckpt] (sample) {Test sample\\image + mask};
+    \node[encoderNode, right=of sample] (infer) {Inference\\eval mode};
+    \node[ioNode, above right=0.75cm and 1.20cm of infer] (predcls) {Softmax\\class + confidence};
+    \node[ioNode, below right=0.75cm and 1.20cm of infer] (predseg) {Sigmoid\\threshold mask};
+    \node[auxNode, right=1.25cm of predcls] (metriccls) {Cls metrics\\Acc, AUC};
+    \node[auxNode, right=1.25cm of predseg] (metricseg) {Seg metrics\\Dice, IoU};
+    \node[outputNode] (panel) at ($(metriccls)!0.5!(metricseg)+(2.25cm,0)$) {Visual panel\\PNG};
+
+    \draw[arrow] (ckpt) -- (sample);
+    \draw[arrow] (sample) -- (infer);
+    \draw[arrow] (infer) -- (predcls);
+    \draw[arrow] (infer) -- (predseg);
+    \draw[arrow] (predcls) -- (metriccls);
+    \draw[arrow] (predseg) -- (metricseg);
+    \draw[arrow] (metriccls) -- (panel);
+    \draw[arrow] (metricseg) -- (panel);
+\end{tikzpicture}
+}
+\caption{Workflow test: tạo metric và ảnh trực quan cho từng mẫu BUSI.}
+\end{figure}
+
+% =========================================================
+\section{Thực nghiệm}
+
+\begin{methodbox}{Nguồn kết quả}
+Các số liệu trong phần này được tổng hợp từ các artifact đã chạy trên Colab và được lưu tại \resultdrive. Bộ artifact gồm notebook chạy baseline, notebook chạy lightweight model, checkpoint, \path{epoch_log.csv}, \path{result.csv} và một số ảnh test trực quan.
+\end{methodbox}
+
+\subsection{Phạm vi thực nghiệm}
+
+Thực nghiệm sử dụng dataset BUSI đã được chuẩn hóa thành cấu trúc \path{train/val/test}, gồm ảnh siêu âm và mask tổn thương tương ứng. Các kết quả trong báo cáo dùng cùng một split để có thể so sánh classification-only, segmentation-only và multi-task model một cách nhất quán.
+
+Phần thực nghiệm tập trung vào ba điểm chính:
+
+\begin{itemize}
+    \item tổng hợp kết quả từ các lần chạy Colab mới đã lưu trên \resultdrive;
+    \item so sánh các biến thể multi-task mới gồm R-CBAM MNet và MK-MNet với baseline MedNet/Multi-task đã có;
+    \item đọc kết quả theo hướng trade-off giữa số tham số, classification metric và segmentation metric.
+\end{itemize}
+
+Để đọc các kết quả một cách nhất quán, các model được chia thành ba nhóm. Nhóm classification-only dùng làm mốc xem mô hình dự đoán nhãn ảnh tốt đến đâu khi không dùng mask. Nhóm segmentation-only dùng làm mốc tham chiếu cho chất lượng mask khi toàn bộ năng lực model tập trung vào phân đoạn. Nhóm multi-task là hướng chính của báo cáo, vì cùng lúc tạo class logits và mask logits trong một kiến trúc chung.
+
+\subsection{Thiết lập train/test}
+
+\begin{table}[H]
+\centering
+\caption{Thiết lập train/test chính trong các lần chạy Colab}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{4.2cm} p{9.6cm}}
+\toprule
+\textbf{Nội dung} & \textbf{Thiết lập} \\
+\midrule
+Input size & \(224 \times 224\) cho các model trong repo; MA-DTNET baseline dùng \(256 \times 256\). \\
+Optimizer & AdamW cho các model trong repo hiện tại. \\
+Classification loss & Focal Loss cho nhánh classification. \\
+Segmentation loss & BCE/Dice-style loss tùy script; MK-MNet có thêm auxiliary loss khi bật deep supervision. \\
+Model selection & Lưu các checkpoint \texttt{best\_classification.pt}, \texttt{best\_segmentation.pt}, \texttt{best\_joint.pt} hoặc \texttt{best\_model.pt} tùy task. \\
+Metric classification & Accuracy, AUC one-vs-rest cho ba lớp BUSI. \\
+Metric segmentation & Dice và IoU trên mask nhị phân. \\
+Seed & Các kết quả chính trong \resultdrive dùng seed 42. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Thiết lập model}
+
+Bảng dưới đây không chỉ liệt kê model đã chạy, mà còn cho biết vai trò của từng model trong lập luận nghiên cứu. MedNet classification là baseline tối thiểu; R-CBAM MNet kiểm tra hướng kết hợp MedNet với CBAM-style segmentation decoder; MK-MNet kiểm tra hướng decoder multi-kernel có khả năng scale số channel; còn MK-UNet, CMUNeXt và MA-DTNET được dùng như mốc tham chiếu ngoài hướng multi-task chính.
+
+\begin{table}[H]
+\centering
+\caption{Các model đã có kết quả trong artifact Colab}
+\renewcommand{\arraystretch}{1.25}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3.2cm} p{2.5cm} p{3.5cm} p{6.2cm}}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{Thiết lập chính} & \textbf{Vai trò thực nghiệm} \\
+\midrule
+MedNet classification & -- & \texttt{img\_224/cbam/run\_1} & Baseline classification-only để so sánh với các model multi-task. \\
+R-CBAM MNet & 6.56M & \(\lambda_{seg}=1.0/1.2\), lr \(=10^{-3}\), wd \(=10^{-3}\) & Multi-task theo hướng MedNet + ý tưởng CBAM-RIUNet. \\
+MK-MNet width 0.25 & 0.63M & \texttt{width\_mult}=0.25, deep supervision, aux \(=0.4\) & Multi-task nhẹ nhất, kiểm tra khả năng giảm số tham số. \\
+MK-MNet width 0.5 & 2.25M & \texttt{width\_mult}=0.5, \(\lambda=0.8\), aux \(=0.4\) & Biến thể MK-MNet lớn hơn để ưu tiên segmentation. \\
+MK-UNet & 0.32M & Segmentation-only baseline & Mốc tham chiếu cho segmentation nhẹ, không có classification branch. \\
+CMUNeXt & 3.15M & Segmentation-only baseline & Mốc tham chiếu segmentation ngoài repo chính. \\
+MA-DTNET & 22.95M & Multi-task/segmentation baseline, img 256 & Mốc tham chiếu mạnh hơn nhưng nặng hơn nhiều. \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Ảnh trực quan trong thực nghiệm}
+
+Các ảnh trực quan được chọn từ các panel test đã xuất ra sau inference và được gom trong thư mục \path{report_images/progress_update_research/}. Cách tổ chức này giúp kiểm tra nhanh toàn bộ hình dùng trong báo cáo mà không cần phụ thuộc vào thư mục artifact tạm thời.
+
+\subsubsection*{MedNet classification-only}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.30\textwidth}
+\centering
+\includegraphics[width=\textwidth]{\researchimgdir/classification_benign.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.30\textwidth}
+\centering
+\includegraphics[width=\textwidth]{\researchimgdir/classification_malignant.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.30\textwidth}
+\centering
+\includegraphics[width=\textwidth]{\researchimgdir/classification_normal.png}
+\end{minipage}
+\caption{Ba ví dụ output của MedNet classification-only trên các lớp \textit{benign}, \textit{malignant} và \textit{normal}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Classification-only dự đoán đúng cả ba mẫu đại diện, nhưng confidence chỉ ở mức trung bình: 0.4554 với \textit{benign}, 0.5430 với \textit{malignant} và 0.4258 với \textit{normal}. Điều này phù hợp với vai trò của MedNet classification-only trong báo cáo: đây là mốc baseline cần thiết, nhưng chưa đủ để kiểm tra mô hình có tập trung vào vùng tổn thương hay không.
+
+\subsubsection*{Segmentation-only baseline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{\researchimgdir/segmentation_benign.png}\\[0.55em]
+\includegraphics[width=0.86\textwidth]{\researchimgdir/segmentation_normal.png}
+\caption{Hai ví dụ output của segmentation-only baseline trên mẫu \textit{benign} và \textit{normal}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Ở mẫu \textit{benign}, segmentation-only baseline tạo mask gần với ground truth và đạt Dice 0.8113. Ngược lại, ở mẫu \textit{normal}, ground-truth mask rỗng nhưng model vẫn sinh một vùng dương tính giả nhỏ, Dice 0.0000. Cặp ví dụ này cho thấy segmentation đã học được tín hiệu vùng tổn thương, nhưng vẫn còn yếu ở khả năng loại bỏ false positive trên ảnh không có tổn thương.
+
+\subsubsection*{MedNetMultiTask baseline}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{\researchimgdir/multitask_malignant.png}\\[0.55em]
+\includegraphics[width=0.86\textwidth]{\researchimgdir/multitask_normal.png}
+\caption{Hai ví dụ output của MedNetMultiTask baseline trên mẫu \textit{malignant} và \textit{normal}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Với mẫu \textit{malignant}, MedNetMultiTask dự đoán đúng lớp nhưng mask bị tách thành nhiều vùng, Dice 0.5912. Với mẫu \textit{normal}, model dự đoán đúng lớp và không sinh mask dương tính giả, Dice 1.0000. Kết quả này cho thấy multi-task baseline có lợi cho việc kết hợp classification và segmentation, nhưng decoder cơ bản vẫn chưa ổn định trên các tổn thương khó.
+
+\subsubsection*{MK-MNet width 0.5}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{\researchimgdir/mk_mnet_width05_benign.png}
+\caption{Output MK-MNet width 0.5 trên mẫu \textit{benign}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Mô hình dự đoán đúng lớp \textit{benign} với confidence 0.7495 và đạt Dice 0.9301. Đây là ví dụ tốt trong nhóm hình minh họa; mask dự đoán gần sát ground truth hơn so với các baseline trước, phù hợp với kết quả định lượng cho thấy MK-MNet width 0.5 có Dice/IoU cao nhất trong nhóm multi-task.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{\researchimgdir/mk_mnet_width05_malignant.png}
+\caption{Output MK-MNet width 0.5 trên mẫu \textit{malignant}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Mô hình dự đoán đúng lớp \textit{malignant} với confidence 0.5272 và đạt Dice 0.9433. Mask dự đoán rất gần vùng tổn thương chính, nhưng confidence classification còn thấp; điều này cho thấy segmentation branch có thể định vị tốt trong khi classification vẫn cần thêm phân tích per-class, đặc biệt với lớp \textit{malignant}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.86\textwidth]{\researchimgdir/mk_mnet_width05_normal.png}
+\caption{Output MK-MNet width 0.5 trên mẫu \textit{normal}.}
+\end{figure}
+
+\noindent\textbf{Nhận xét.}
+Mô hình dự đoán đúng lớp \textit{normal} nhưng confidence chỉ 0.3927 và sinh một vùng mask dương tính giả, Dice 0.0000. Đây là hạn chế quan trọng của cấu hình ưu tiên segmentation; model có thể đạt Dice trung bình cao trên các ảnh có tổn thương nhưng vẫn cần cơ chế giảm false positive cho ảnh normal.
+
+% =========================================================
+\section{Kết quả}
+
+Các kết quả được đọc theo hai nhóm metric. Với classification, Test Accuracy cho biết tỷ lệ dự đoán đúng lớp, còn AUC one-vs-rest phản ánh khả năng phân biệt từng lớp với phần còn lại. Với segmentation, Dice và IoU đo mức chồng khớp giữa mask dự đoán và mask thật; Dice/IoU càng cao thì vùng dự đoán càng gần ground truth. Vì bài toán hiện tại là multi-task, một cấu hình tốt không nhất thiết chỉ tối đa hóa một metric, mà cần cân bằng giữa classification, segmentation và số tham số.
+
+\subsection{Mốc so sánh classification-only}
+
+\begin{table}[H]
+\centering
+\caption{Mốc MedNet classification-only trên BUSI}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{3.8cm} p{2.5cm} p{2.5cm} p{2.5cm} p{2.5cm}}
+\toprule
+\textbf{Model} & \textbf{Best Val Acc} & \textbf{Test Acc} & \textbf{Test AUC} & \textbf{Train time} \\
+\midrule
+MedNet classification & 70.43\% & 72.50\% & 0.8678 & 11.43 phút \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Kết quả này được dùng như mốc so sánh tối thiểu cho các model multi-task mới. Nhóm không xem classification-only là hướng cuối cùng, mà dùng nó để đánh giá liệu việc học thêm mask segmentation có giúp shared backbone cải thiện classification hay không.
+
+\subsection{Kết quả multi-task của repo}
+
+\begin{table}[H]
+\centering
+\caption{Kết quả các model multi-task chính trong repo}
+\renewcommand{\arraystretch}{1.25}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3.6cm} p{2.2cm} p{2.0cm} p{2.2cm} p{2.0cm} p{2.0cm} p{2.0cm} p{2.0cm} p{2.0cm}}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{Val Acc} & \textbf{Val Dice} & \textbf{Test Acc} & \textbf{Test AUC} & \textbf{Test Dice} & \textbf{Test IoU} & \textbf{Time} \\
+\midrule
+R-CBAM MNet, \(\lambda_{seg}=1.0\) & 6.56M & 74.78\% & 0.6802 & 86.67\% & 0.9367 & 0.6834 & 0.6048 & 38.64 phút \\
+R-CBAM MNet, \(\lambda_{seg}=1.2\) & 6.56M & 80.87\% & 0.7233 & 85.83\% & 0.9535 & 0.6912 & 0.6167 & 104.37 phút \\
+MK-MNet, width 0.25 & 0.63M & 80.87\% & 0.7205 & 85.83\% & 0.9577 & 0.6975 & 0.6199 & 29.15 phút \\
+MK-MNet, width 0.25, \(\lambda=0.6\) & 0.63M & -- & -- & 78.33\% & 0.9224 & 0.6908 & 0.6140 & 27.80 phút \\
+MK-MNet, width 0.5, \(\lambda=0.8\) & 2.25M & -- & -- & 80.83\% & 0.9249 & 0.7192 & 0.6483 & 46.82 phút \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{methodbox}{Nhận xét chính từ bảng multi-task}
+So với MedNet classification-only, các model multi-task cải thiện rõ rệt ở classification. MedNet baseline đạt Test Acc 72.50\% và AUC 0.8678, trong khi R-CBAM MNet và MK-MNet đạt khoảng 85--87\% Test Acc và AUC trên 0.93. Điều này ủng hộ giả thuyết rằng việc học đồng thời mask tổn thương có thể giúp shared backbone học đặc trưng hữu ích hơn cho phân loại.
+\end{methodbox}
+
+Trong hai hướng multi-task mới, MK-MNet width 0.25 là cấu hình đáng chú ý nhất: chỉ khoảng 0.63M tham số nhưng đạt Test Acc 85.83\%, Test AUC 0.9577, Dice 0.6975 và IoU 0.6199. So với R-CBAM MNet, cấu hình này giảm khoảng hơn 10 lần số tham số nhưng vẫn giữ được classification tương đương và segmentation nhỉnh hơn trong lần chạy hiện tại.
+
+MK-MNet width 0.5 đạt Dice/IoU cao nhất trong nhóm multi-task hiện tại, với Dice 0.7192 và IoU 0.6483, nhưng Test Acc giảm xuống 80.83\%. Điều này cho thấy khi tăng capacity và tăng trọng số/ưu tiên segmentation, model có xu hướng cải thiện mask nhưng có thể đánh đổi một phần hiệu năng classification.
+
+\subsection{Kết quả baseline segmentation tham chiếu}
+
+\begin{table}[H]
+\centering
+\caption{Một số baseline segmentation/multi-task tham chiếu trong artifact Colab}
+\renewcommand{\arraystretch}{1.25}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{p{3.3cm} p{2.2cm} p{2.1cm} p{2.1cm} p{2.1cm} p{2.4cm} p{4.2cm}}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{Test Acc} & \textbf{Test Dice} & \textbf{Test IoU} & \textbf{Train time} & \textbf{Ghi chú} \\
+\midrule
+MK-UNet & 0.32M & -- & 0.7567 & 0.6848 & 30.47 phút & Segmentation-only, rất nhẹ. \\
+CMUNeXt & 3.15M & -- & 0.7501 & 0.6721 & 39.86 phút & Segmentation-only baseline. \\
+MA-DTNET & 22.95M & 83.33\% & 0.7679 & 0.6921 & 26.65 phút & Baseline nặng hơn, dùng ảnh 256. \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+Các baseline segmentation-only vẫn đạt Dice cao hơn MK-MNet/R-CBAM MNet vì chúng tập trung hoàn toàn vào segmentation. Tuy nhiên, chúng không giải quyết đồng thời classification ba lớp như hướng multi-task của nhóm. Vì vậy, kết quả hiện tại nên được đọc theo hướng cân bằng: model của nhóm chưa thắng segmentation-only baseline về Dice, nhưng đang đạt trade-off tốt hơn giữa số tham số, classification và segmentation trong cùng một kiến trúc.
+
+\subsection{Tiến độ hiện tại và cải tiến dự kiến}
+
+\begin{table}[H]
+\centering
+\caption{Tiến độ hiện tại sau các lần chạy Colab}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{p{4.2cm} p{3.2cm} p{6.8cm}}
+\toprule
+\textbf{Hạng mục} & \textbf{Trạng thái} & \textbf{Ghi chú} \\
+\midrule
+Classification baseline & Hoàn thành & Đã có result CSV, checkpoint và ảnh test. \\
+Segmentation baseline & Hoàn thành bước đầu & Đã có epoch log và ảnh mask trực quan. \\
+R-CBAM MNet & Hoàn thành lần chạy chính & Có hai cấu hình \(\lambda_{seg}=1.0\) và 1.2; cấu hình 1.2 tốt hơn về AUC/Dice. \\
+MK-MNet & Hoàn thành nhiều cấu hình & Width 0.25 rất nhẹ; width 0.5 cho Dice/IoU tốt hơn nhưng giảm accuracy. \\
+Baseline ngoài repo & Đã có mốc tham chiếu & MK-UNet, CMUNeXt và MA-DTNET dùng để đọc vị chất lượng segmentation. \\
+Grad-CAM/XAI & Chưa hoàn thành & Cần bổ sung để kiểm tra vùng ảnh ảnh hưởng đến classification. \\
+Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối lại hướng proposal ban đầu. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{enumerate}[label=\textbf{G\arabic*.}]
+    \item \textbf{Chốt cấu hình multi-task đại diện}. MK-MNet width 0.25 có thể dùng làm cấu hình lightweight chính; MK-MNet width 0.5 dùng làm cấu hình ưu tiên segmentation; R-CBAM MNet dùng làm biến thể dựa trên CBAM-RIUNet.
+    \item \textbf{Bổ sung augmentation chọn lọc}. Chạy thêm một nhóm nhỏ augmentation theo proposal ban đầu: rotation nhỏ, brightness/contrast nhẹ, shift/scale vừa phải và speckle noise. Không cần so sánh toàn bộ policy như proposal gốc.
+    \item \textbf{Bổ sung Grad-CAM/XAI}. Sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không.
+    \item \textbf{Củng cố metric y khoa}. Bổ sung confusion matrix, per-class precision/recall/F1, sensitivity và specificity, đặc biệt cho lớp \textit{malignant}.
+    \item \textbf{Bổ sung phân tích trade-off}. So sánh theo ba trục: số tham số, classification metric và segmentation metric. Đây là cách trình bày phù hợp nhất với bài toán lightweight multi-task hiện tại.
+\end{enumerate}
+
+\begin{methodbox}{Kết luận tiến độ}
+Các kết quả được lưu tại \resultdrive cho thấy hướng chuyển từ augmentation-heavy proposal sang lightweight multi-task là hợp lý. Nhóm đã có bằng chứng ban đầu rằng multi-task giúp classification tốt hơn baseline classification-only, đồng thời tạo được mask segmentation ở mức khả dụng. Hai mảnh còn thiếu để hoàn thiện câu chuyện nghiên cứu là data augmentation chọn lọc và Grad-CAM/XAI.
+\end{methodbox}
+
+\end{document}
