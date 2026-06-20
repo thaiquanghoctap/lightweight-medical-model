@@ -1,7 +1,9 @@
 import argparse
 import csv
+import math
 import random
 import time
+from collections import Counter
 from pathlib import Path
 
 import albumentations as A
@@ -23,7 +25,7 @@ IMAGE_EXTENSIONS = {".jpeg", ".jpg", ".png"}
 
 
 class BUSIMultiTaskDataset(Dataset):
-    def __init__(self, split_dir, transform):
+    def __init__(self, split_dir, transform, oversample=False):
         self.transform = transform
         self.samples = []
 
@@ -47,6 +49,21 @@ class BUSIMultiTaskDataset(Dataset):
                 if not mask_path.exists():
                     raise FileNotFoundError(f"Missing mask: {mask_path}")
                 self.samples.append((image_path, mask_path, label))
+
+        if oversample:
+            self.samples = self._deterministic_oversample(self.samples)
+
+    @staticmethod
+    def _deterministic_oversample(samples):
+        """Replicate whole classes by RF_c = ceil(1/P_c) to balance the set
+        (Aumente-Maestro et al., CMPB 2025). Helps the minority normal class."""
+        counts = Counter(label for _, _, label in samples)
+        total = len(samples)
+        expanded = []
+        for image_path, mask_path, label in samples:
+            replication_factor = math.ceil(total / counts[label])
+            expanded.extend([(image_path, mask_path, label)] * replication_factor)
+        return expanded
 
     def __len__(self):
         return len(self.samples)
@@ -144,7 +161,7 @@ def build_transforms(image_size):
     return train_transform, eval_transform
 
 
-def build_loaders(dataset_dir, image_size, batch_size, num_workers):
+def build_loaders(dataset_dir, image_size, batch_size, num_workers, oversample=False):
     train_transform, eval_transform = build_transforms(image_size)
     transforms = {
         "train": train_transform,
@@ -158,7 +175,9 @@ def build_loaders(dataset_dir, image_size, batch_size, num_workers):
         if not split_dir.exists():
             raise FileNotFoundError(f"Missing BUSI split: {split_dir}")
 
-        dataset = BUSIMultiTaskDataset(split_dir, transform)
+        dataset = BUSIMultiTaskDataset(
+            split_dir, transform, oversample=oversample and split == "train"
+        )
         print(f"{split}: {len(dataset)} image-label-mask samples")
         loaders[split] = DataLoader(
             dataset,
@@ -305,6 +324,7 @@ def save_result(path, args, parameter_count, best_val_loss, test_metrics, durati
                 [
                     "Image_Size",
                     "Lambda",
+                    "Oversample",
                     "Learning_Rate",
                     "Weight_Decay",
                     "Patience",
@@ -325,6 +345,7 @@ def save_result(path, args, parameter_count, best_val_loss, test_metrics, durati
             [
                 args.image_size,
                 args.lambda_weight,
+                args.oversample,
                 args.learning_rate,
                 args.weight_decay,
                 args.patience,
@@ -351,6 +372,7 @@ def train(args):
         / "busi"
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
+        / f"oversample_{int(args.oversample)}"
         / f"lambda_{args.lambda_weight:g}"
         / f"lr_{args.learning_rate:g}"
         / f"weight_decay_{args.weight_decay:g}"
@@ -363,6 +385,7 @@ def train(args):
         args.image_size,
         args.batch_size,
         args.num_workers,
+        oversample=args.oversample,
     )
     model = RCBAMMNet(num_classes=len(BUSI_CLASSES)).to(device)
     parameter_count = sum(parameter.numel() for parameter in model.parameters())
@@ -493,6 +516,11 @@ def parse_args():
         type=float,
         default=0.8,
         help="Weight on the segmentation loss; classification gets (1 - lambda).",
+    )
+    parser.add_argument(
+        "--oversample",
+        action="store_true",
+        help="Deterministic class oversampling on the training set (balances normal).",
     )
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument(

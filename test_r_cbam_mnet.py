@@ -95,6 +95,7 @@ def build_run_dir(args):
         / "busi"
         / "r_cbam_mnet"
         / f"img_{args.image_size}"
+        / f"oversample_{int(args.oversample)}"
         / f"lambda_{args.lambda_weight:g}"
         / f"lr_{args.learning_rate:g}"
         / f"weight_decay_{args.weight_decay:g}"
@@ -188,6 +189,7 @@ def parse_args():
     parser.add_argument("--checkpoint", type=Path, default=None)
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--image-size", type=int, default=224)
+    parser.add_argument("--oversample", action="store_true", help="Locate the oversampled-training checkpoint.")
     parser.add_argument("--lambda", dest="lambda_weight", type=float, default=0.8)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
