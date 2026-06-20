@@ -382,7 +382,7 @@ def train(args):
         weight_decay=args.weight_decay,
     )
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=20, eta_min=1e-6
+        optimizer, T_max=args.epochs, eta_min=1e-6
     )
     early_stopping = EarlyStopping(patience=args.patience)
 
@@ -445,7 +445,7 @@ def train(args):
             best_val_loss = val_metrics["loss"]
             torch.save(model.state_dict(), checkpoint_path)
 
-        if early_stopping.should_stop(val_metrics["loss"]):
+        if not args.no_early_stop and early_stopping.should_stop(val_metrics["loss"]):
             print(f"Early stopping at epoch {epoch}")
             break
 
@@ -494,8 +494,13 @@ def parse_args():
         default=0.8,
         help="Weight on the segmentation loss; classification gets (1 - lambda).",
     )
-    parser.add_argument("--epochs", type=int, default=70)
-    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument(
+        "--no-early-stop",
+        action="store_true",
+        help="Train the full --epochs without early stopping.",
+    )
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)

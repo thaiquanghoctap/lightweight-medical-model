@@ -1,7 +1,9 @@
 import argparse
 import csv
+import math
 import random
 import time
+from collections import Counter
 from pathlib import Path
 
 import albumentations as A
@@ -23,7 +25,7 @@ IMAGE_EXTENSIONS = {".jpeg", ".jpg", ".png"}
 
 
 class BUSIMultiTaskDataset(Dataset):
-    def __init__(self, split_dir, transform):
+    def __init__(self, split_dir, transform, oversample=False):
         self.transform = transform
         self.samples = []
 
@@ -47,6 +49,25 @@ class BUSIMultiTaskDataset(Dataset):
                 if not mask_path.exists():
                     raise FileNotFoundError(f"Missing mask: {mask_path}")
                 self.samples.append((image_path, mask_path, label))
+
+        if oversample:
+            self.samples = self._deterministic_oversample(self.samples)
+
+    @staticmethod
+    def _deterministic_oversample(samples):
+        """Replicate whole classes by RF_c = ceil(1/P_c) to balance the set.
+
+        Deterministic oversampling from Aumente-Maestro et al. (CMPB 2025):
+        every image of a class is replicated the same number of times, so no
+        randomness is introduced. Helps the minority normal class on BUSI.
+        """
+        counts = Counter(label for _, _, label in samples)
+        total = len(samples)
+        expanded = []
+        for image_path, mask_path, label in samples:
+            replication_factor = math.ceil(total / counts[label])
+            expanded.extend([(image_path, mask_path, label)] * replication_factor)
+        return expanded
 
     def __len__(self):
         return len(self.samples)
@@ -144,7 +165,7 @@ def build_transforms(image_size):
     return train_transform, eval_transform
 
 
-def build_loaders(dataset_dir, image_size, batch_size, num_workers):
+def build_loaders(dataset_dir, image_size, batch_size, num_workers, oversample=False):
     train_transform, eval_transform = build_transforms(image_size)
     transforms = {
         "train": train_transform,
@@ -158,7 +179,9 @@ def build_loaders(dataset_dir, image_size, batch_size, num_workers):
         if not split_dir.exists():
             raise FileNotFoundError(f"Missing BUSI split: {split_dir}")
 
-        dataset = BUSIMultiTaskDataset(split_dir, transform)
+        dataset = BUSIMultiTaskDataset(
+            split_dir, transform, oversample=oversample and split == "train"
+        )
         print(f"{split}: {len(dataset)} image-label-mask samples")
         loaders[split] = DataLoader(
             dataset,
@@ -320,6 +343,7 @@ def save_result(path, args, parameter_count, best_val_loss, test_metrics, durati
                     "Lambda",
                     "Aux_Weight",
                     "Deep_Supervision",
+                    "Oversample",
                     "Learning_Rate",
                     "Weight_Decay",
                     "Patience",
@@ -343,6 +367,7 @@ def save_result(path, args, parameter_count, best_val_loss, test_metrics, durati
                 args.lambda_weight,
                 args.aux_weight,
                 args.deep_supervision,
+                args.oversample,
                 args.learning_rate,
                 args.weight_decay,
                 args.patience,
@@ -370,6 +395,7 @@ def train(args):
         / "mk_mnet"
         / f"img_{args.image_size}"
         / f"width_{args.width_mult:g}"
+        / f"oversample_{int(args.oversample)}"
         / f"lambda_{args.lambda_weight:g}"
         / f"lr_{args.learning_rate:g}"
         / f"weight_decay_{args.weight_decay:g}"
@@ -382,6 +408,7 @@ def train(args):
         args.image_size,
         args.batch_size,
         args.num_workers,
+        oversample=args.oversample,
     )
     model = MKMNet(
         num_classes=len(BUSI_CLASSES),
@@ -407,7 +434,7 @@ def train(args):
         weight_decay=args.weight_decay,
     )
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=20, eta_min=1e-6
+        optimizer, T_max=args.epochs, eta_min=1e-6
     )
     early_stopping = EarlyStopping(patience=args.patience)
 
@@ -472,7 +499,7 @@ def train(args):
             best_val_loss = val_metrics["loss"]
             torch.save(model.state_dict(), checkpoint_path)
 
-        if early_stopping.should_stop(val_metrics["loss"]):
+        if not args.no_early_stop and early_stopping.should_stop(val_metrics["loss"]):
             print(f"Early stopping at epoch {epoch}")
             break
 
@@ -527,8 +554,18 @@ def parse_args():
     parser.add_argument(
         "--deep-supervision", choices=["true", "false"], default="true"
     )
-    parser.add_argument("--epochs", type=int, default=70)
-    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument(
+        "--oversample",
+        action="store_true",
+        help="Deterministic class oversampling on the training set (balances normal).",
+    )
+    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument(
+        "--no-early-stop",
+        action="store_true",
+        help="Train the full --epochs without early stopping.",
+    )
+    parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--weight-decay", type=float, default=1e-4)

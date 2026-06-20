@@ -267,7 +267,7 @@ def train_one_run(args, device, image_size, use_cbam, run):
         model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
     )
     scheduler = optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=20, eta_min=1e-6
+        optimizer, T_max=args.epochs, eta_min=1e-6
     )
     early_stopping = EarlyStopping(patience=args.patience)
 
@@ -292,7 +292,7 @@ def train_one_run(args, device, image_size, use_cbam, run):
             best_val_acc = val_acc
             torch.save(model.state_dict(), checkpoint_path)
 
-        if early_stopping.should_stop(val_acc):
+        if not args.no_early_stop and early_stopping.should_stop(val_acc):
             print(f"Early stopping triggered at epoch {epoch}")
             break
 
@@ -351,8 +351,13 @@ def parse_args():
     parser.add_argument("--img-sizes", type=int, nargs="+", default=[224])
     parser.add_argument("--cbam", choices=["true", "false", "both"], default="true")
     parser.add_argument("--runs", type=int, default=1)
-    parser.add_argument("--epochs", type=int, default=70)
+    parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--patience", type=int, default=10)
+    parser.add_argument(
+        "--no-early-stop",
+        action="store_true",
+        help="Train the full --epochs without early stopping.",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--learning-rate", type=float, default=0.0003)
