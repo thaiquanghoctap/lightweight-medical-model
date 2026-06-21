@@ -108,10 +108,12 @@ def collect_test_images(dataset_dir, num_samples, seed):
         images_by_class[class_name] = image_paths
 
     selected = []
-    while len(selected) < num_samples:
+    while num_samples is None or len(selected) < num_samples:
         added = False
         for class_name in BUSI_CLASSES:
-            if images_by_class[class_name] and len(selected) < num_samples:
+            if images_by_class[class_name] and (
+                num_samples is None or len(selected) < num_samples
+            ):
                 selected.append(images_by_class[class_name].pop())
                 added = True
         if not added:
@@ -234,7 +236,8 @@ def generate(args):
 
     target_layer = model.backbone.stages[args.stage - 1]
     gradcam = GradCAM(model, target_layer)
-    image_paths = collect_test_images(args.dataset_dir, args.num_samples, args.seed)
+    num_samples = None if args.all_samples else args.num_samples
+    image_paths = collect_test_images(args.dataset_dir, num_samples, args.seed)
 
     try:
         for index, image_path in enumerate(image_paths, start=1):
@@ -326,6 +329,11 @@ def parse_args():
     parser.add_argument("--width-mult", type=float, default=1.0)
     parser.add_argument("--stage", type=int, default=5)
     parser.add_argument("--num-samples", type=int, default=9)
+    parser.add_argument(
+        "--all-samples",
+        action="store_true",
+        help="Generate Grad-CAM panels for every image in the BUSI test split.",
+    )
     parser.add_argument("--threshold", type=float, default=0.5)
     parser.add_argument("--alpha", type=float, default=0.45)
     parser.add_argument("--seed", type=int, default=42)

@@ -1025,7 +1025,7 @@ Segmentation baseline & Hoàn thành bước đầu & Đã có epoch log và ả
 R-CBAM MNet & Hoàn thành lần chạy chính & Có hai cấu hình \(\lambda_{seg}=1.0\) và 1.2; cấu hình 1.2 tốt hơn về AUC/Dice. \\
 MK-MNet & Hoàn thành nhiều cấu hình & Width 0.25 rất nhẹ; width 0.5 cho Dice/IoU tốt hơn nhưng giảm accuracy. \\
 Baseline ngoài repo & Đã có mốc tham chiếu & MK-UNet, CMUNeXt và MA-DTNET dùng để đọc vị chất lượng segmentation. \\
-Grad-CAM/XAI & Chưa hoàn thành & Cần bổ sung để kiểm tra vùng ảnh ảnh hưởng đến classification. \\
+Grad-CAM/XAI & Đã có script, chưa có ảnh report & Đã bổ sung \texttt{generate\_gradcam.py} để sinh heatmap từ các checkpoint hiện có; cần chạy script và đưa ảnh Grad-CAM vào \path{report_images/}. \\
 Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối lại hướng proposal ban đầu. \\
 \bottomrule
 \end{tabular}
@@ -1034,13 +1034,13 @@ Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối l�
 \begin{enumerate}[label=\textbf{G\arabic*.}]
     \item \textbf{Chốt cấu hình multi-task đại diện}. MK-MNet width 0.25 có thể dùng làm cấu hình lightweight chính; MK-MNet width 0.5 dùng làm cấu hình ưu tiên segmentation; R-CBAM MNet dùng làm biến thể dựa trên CBAM-RIUNet.
     \item \textbf{Bổ sung augmentation chọn lọc}. Chạy thêm một nhóm nhỏ augmentation theo proposal ban đầu: rotation nhỏ, brightness/contrast nhẹ, shift/scale vừa phải và speckle noise. Không cần so sánh toàn bộ policy như proposal gốc.
-    \item \textbf{Bổ sung Grad-CAM/XAI}. Sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không.
+    \item \textbf{Hoàn thiện Grad-CAM/XAI}. Dùng \texttt{generate\_gradcam.py} để sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không. Với R-CBAM MNet, cần chọn rõ checkpoint \texttt{best_classification.pt}, \texttt{best_segmentation.pt} hoặc \texttt{best_joint.pt} vì script train không lưu \texttt{best_model.pt}.
     \item \textbf{Củng cố metric y khoa}. Bổ sung confusion matrix, per-class precision/recall/F1, sensitivity và specificity, đặc biệt cho lớp \textit{malignant}.
     \item \textbf{Bổ sung phân tích trade-off}. So sánh theo ba trục: số tham số, classification metric và segmentation metric. Đây là cách trình bày phù hợp nhất với bài toán lightweight multi-task hiện tại.
 \end{enumerate}
 
 \begin{methodbox}{Kết luận tiến độ}
-Các kết quả được lưu tại \resultdrive cho thấy hướng chuyển từ augmentation-heavy proposal sang lightweight multi-task là hợp lý. Nhóm đã có bằng chứng ban đầu rằng multi-task giúp classification tốt hơn baseline classification-only, đồng thời tạo được mask segmentation ở mức khả dụng. Hai mảnh còn thiếu để hoàn thiện câu chuyện nghiên cứu là data augmentation chọn lọc và Grad-CAM/XAI.
+Các kết quả được lưu tại \resultdrive cho thấy hướng chuyển từ augmentation-heavy proposal sang lightweight multi-task là hợp lý. Nhóm đã có bằng chứng ban đầu rằng multi-task giúp classification tốt hơn baseline classification-only, đồng thời tạo được mask segmentation ở mức khả dụng. Hai mảnh còn thiếu để hoàn thiện câu chuyện nghiên cứu là data augmentation chọn lọc và phần phân tích Grad-CAM/XAI bằng ảnh heatmap thực tế.
 \end{methodbox}
 
 \end{document}
