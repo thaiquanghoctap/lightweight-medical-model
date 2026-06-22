@@ -41,6 +41,10 @@ references, Grad-CAM outputs, and final artifacts consistent.
 - [ ] Recompile the `.tex` files in `report/`.
 - [ ] Check that all report image paths still resolve from the `report/` folder.
 
+Detailed-evaluation code and the Colab batch notebook are implemented, but the
+three medical-metric items above remain unchecked until real CSV/PNG artifacts
+are generated and inserted into the report.
+
 ## Suggested Grad-CAM Commands
 
 Generate Grad-CAM for MK-MNet width `0.25`:

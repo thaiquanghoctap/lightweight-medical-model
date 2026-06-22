@@ -13,6 +13,7 @@
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{longtable}
 \usepackage{array}
 \usepackage{float}
 \usepackage{enumitem}
@@ -1010,6 +1011,34 @@ MA-DTNET & 22.95M & 83.33\% & 0.7679 & 0.6921 & 26.65 phút & Baseline nặng h�
 
 Các baseline segmentation-only vẫn đạt Dice cao hơn MK-MNet/R-CBAM MNet vì chúng tập trung hoàn toàn vào segmentation. Tuy nhiên, chúng không giải quyết đồng thời classification ba lớp như hướng multi-task của nhóm. Vì vậy, kết quả hiện tại nên được đọc theo hướng cân bằng: model của nhóm chưa thắng segmentation-only baseline về Dice, nhưng đang đạt trade-off tốt hơn giữa số tham số, classification và segmentation trong cùng một kiến trúc.
 
+\subsection{Thiết kế detailed evaluation và medical metrics}
+
+Để tránh accuracy tổng quát che khuất lỗi trên lớp ít mẫu, nhóm đã bổ sung một evaluator thống nhất cho mọi model có nhánh classification: MedNet classification, MedNetMultiTask, R-CBAM MNet và MK-MNet. Evaluator duyệt toàn bộ test set theo cùng thứ tự, lưu dự đoán từng mẫu và tạo confusion matrix với hàng là nhãn thật, cột là nhãn dự đoán. Kết quả raw của model được dùng làm kết quả chính; prediction-refining chỉ được báo cáo như một ablation cho các model multi-task.
+
+Với mỗi lớp (c), model được đánh giá theo chiến lược one-vs-rest. Sensitivity chính là recall của lớp đang xét, còn specificity đo khả năng loại đúng các mẫu không thuộc lớp đó:
+
+\[
+\mathrm{Sensitivity}_c = \frac{TP_c}{TP_c+FN_c},
+\qquad
+\mathrm{Specificity}_c = \frac{TN_c}{TN_c+FP_c}.
+\]
+
+Ngoài precision, sensitivity, specificity và F1 từng lớp, evaluator xuất macro-precision, macro-recall, macro-F1 và AUC one-vs-rest. Phần phân tích y khoa sẽ ưu tiên sensitivity và specificity của lớp \textit{malignant}, vì false negative ở lớp này có ý nghĩa nghiêm trọng hơn accuracy trung bình.
+
+Đối với segmentation, Dice/IoU được báo cáo theo hai phạm vi. Giá trị \textit{all} dùng toàn bộ test set; giá trị \textit{lesion-only} chỉ dùng ảnh \textit{benign} và \textit{malignant}. Lesion-only được xem là kết quả segmentation chính, vì ảnh \textit{normal} có cả mask thật và mask dự đoán rỗng có thể đạt Dice 1.0 mà không phản ánh năng lực định vị tổn thương.
+
+Prediction-refining dùng mask threshold 0.5 và area threshold 0.005. Nếu tỷ lệ vùng mask dự đoán nhỏ hơn ngưỡng diện tích, nhãn được hiệu chỉnh thành \textit{normal}; nếu nhãn sau hiệu chỉnh là \textit{normal}, mask được đặt rỗng. Cách hậu xử lý này không thay thế kết quả raw mà chỉ giúp đo tác động của ràng buộc nhất quán giữa classification và segmentation.
+
+Mỗi cấu hình sẽ sinh \path{summary.csv}, \path{per_class_metrics.csv}, \path{predictions.csv}, confusion matrix dạng count/normalized và ảnh PNG. Notebook \path{colab-result/run-detailed-evaluation.ipynb} chạy tuần tự toàn bộ checkpoint, ghi \path{evaluation_status.csv} và không dừng các cấu hình phía sau nếu một checkpoint lỗi. Các bảng số chi tiết và confusion matrix sẽ được chèn vào báo cáo sau khi các artifact này được chạy trên Colab; báo cáo không sử dụng số liệu ước lượng hoặc tự suy diễn từ accuracy tổng quát.
+
+\IfFileExists{../medical-evaluation-results/medical_metrics_tables.tex}{
+    \input{../medical-evaluation-results/medical_metrics_tables.tex}
+}{
+    \begin{expectbox}{Trạng thái artifact detailed evaluation}
+    Chưa có bảng metric được sinh từ Colab. Cần chạy notebook detailed evaluation và đồng bộ thư mục \path{medical-evaluation-results/} trước khi đánh dấu hạng mục này là hoàn thành.
+    \end{expectbox}
+}
+
 \subsection{Tiến độ hiện tại và cải tiến dự kiến}
 
 \begin{table}[H]
@@ -1026,6 +1055,7 @@ R-CBAM MNet & Hoàn thành lần chạy chính & Có hai cấu hình \(\lambda_{
 MK-MNet & Hoàn thành nhiều cấu hình & Width 0.25 rất nhẹ; width 0.5 cho Dice/IoU tốt hơn nhưng giảm accuracy. \\
 Baseline ngoài repo & Đã có mốc tham chiếu & MK-UNet, CMUNeXt và MA-DTNET dùng để đọc vị chất lượng segmentation. \\
 Grad-CAM/XAI & Đã có script, chưa có ảnh report & Đã bổ sung \texttt{generate\_gradcam.py} để sinh heatmap từ các checkpoint hiện có; cần chạy script và đưa ảnh Grad-CAM vào \path{report_images/}. \\
+Detailed medical metrics & Đã có evaluator, chờ artifact Colab & Đã triển khai confusion matrix, macro/per-class precision--recall--F1, sensitivity, specificity, AUC và lesion-only Dice/IoU; chỉ hoàn thành sau khi CSV thật được chèn vào báo cáo. \\
 Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối lại hướng proposal ban đầu. \\
 \bottomrule
 \end{tabular}
@@ -1034,13 +1064,19 @@ Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối l�
 \begin{enumerate}[label=\textbf{G\arabic*.}]
     \item \textbf{Chốt cấu hình multi-task đại diện}. MK-MNet width 0.25 có thể dùng làm cấu hình lightweight chính; MK-MNet width 0.5 dùng làm cấu hình ưu tiên segmentation; R-CBAM MNet dùng làm biến thể dựa trên CBAM-RIUNet.
     \item \textbf{Bổ sung augmentation chọn lọc}. Chạy thêm một nhóm nhỏ augmentation theo proposal ban đầu: rotation nhỏ, brightness/contrast nhẹ, shift/scale vừa phải và speckle noise. Không cần so sánh toàn bộ policy như proposal gốc.
-    \item \textbf{Hoàn thiện Grad-CAM/XAI}. Dùng \texttt{generate\_gradcam.py} để sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không. Với R-CBAM MNet, cần chọn rõ checkpoint \texttt{best_classification.pt}, \texttt{best_segmentation.pt} hoặc \texttt{best_joint.pt} vì script train không lưu \texttt{best_model.pt}.
-    \item \textbf{Củng cố metric y khoa}. Bổ sung confusion matrix, per-class precision/recall/F1, sensitivity và specificity, đặc biệt cho lớp \textit{malignant}.
+    \item \textbf{Hoàn thiện Grad-CAM/XAI}. Dùng \texttt{generate\_gradcam.py} để sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không. Với các run R-CBAM MNet cũ dùng \texttt{best\_joint.pt}; code train mới lưu checkpoint thống nhất dưới tên \texttt{best\_model.pt}.
+    \item \textbf{Củng cố metric y khoa}. Chạy \path{colab-result/run-detailed-evaluation.ipynb} trên Colab, kiểm tra \texttt{evaluation\_status.csv}, sau đó đưa confusion matrix, per-class precision/recall/F1, sensitivity và specificity vào báo cáo, đặc biệt cho lớp \textit{malignant}.
     \item \textbf{Bổ sung phân tích trade-off}. So sánh theo ba trục: số tham số, classification metric và segmentation metric. Đây là cách trình bày phù hợp nhất với bài toán lightweight multi-task hiện tại.
 \end{enumerate}
 
 \begin{methodbox}{Kết luận tiến độ}
-Các kết quả được lưu tại \resultdrive cho thấy hướng chuyển từ augmentation-heavy proposal sang lightweight multi-task là hợp lý. Nhóm đã có bằng chứng ban đầu rằng multi-task giúp classification tốt hơn baseline classification-only, đồng thời tạo được mask segmentation ở mức khả dụng. Hai mảnh còn thiếu để hoàn thiện câu chuyện nghiên cứu là data augmentation chọn lọc và phần phân tích Grad-CAM/XAI bằng ảnh heatmap thực tế.
+Các kết quả được lưu tại \resultdrive cho thấy hướng chuyển từ augmentation-heavy proposal sang lightweight multi-task là hợp lý. Nhóm đã có bằng chứng ban đầu rằng multi-task giúp classification tốt hơn baseline classification-only, đồng thời tạo được mask segmentation ở mức khả dụng. Các mảnh còn thiếu để hoàn thiện câu chuyện nghiên cứu là data augmentation chọn lọc, phần phân tích Grad-CAM/XAI bằng ảnh heatmap thực tế và việc chạy bộ detailed medical metrics mới trên toàn bộ checkpoint để đưa số liệu thật vào báo cáo.
 \end{methodbox}
+
+\IfFileExists{../medical-evaluation-results/confusion_matrices_appendix.tex}{
+    \appendix
+    \section{Toàn bộ confusion matrix raw}
+    \input{../medical-evaluation-results/confusion_matrices_appendix.tex}
+}{}
 
 \end{document}
