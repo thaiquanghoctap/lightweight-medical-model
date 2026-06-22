@@ -1,10 +1,9 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.6.2)  22 JUN 2026 21:44
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.6.2)  22 JUN 2026 23:13
 entering extended mode
  restricted \write18 enabled.
- file:line:error style messages enabled.
  %&-line parsing enabled.
-**/Users/dylan/Documents/lightweight-medical-model/report/progress_update_research.tex
-(/Users/dylan/Documents/lightweight-medical-model/report/progress_update_research.tex
+**progress_update_research.tex
+(./progress_update_research.tex
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-05-26>
 (/Users/dylan/Library/TinyTeX/texmf-dist/tex/latex/base/article.cls
@@ -1101,55 +1100,55 @@ Underfull \hbox (badness 10000) in paragraph at lines 858--858
  []
 
 [12]
-<report_images/progress_update_research/classification_benign.png, id=254, 224.84pt x 283.0575pt>
+<report_images/progress_update_research/classification_benign.png, id=258, 224.84pt x 283.0575pt>
 File: report_images/progress_update_research/classification_benign.png Graphic file (type png)
 <use report_images/progress_update_research/classification_benign.png>
 Package pdftex.def Info: report_images/progress_update_research/classification_benign.png  used on input line 871.
 (pdftex.def)             Requested size: 139.13528pt x 175.16989pt.
-<report_images/progress_update_research/classification_malignant.png, id=255, 224.84pt x 283.0575pt>
+<report_images/progress_update_research/classification_malignant.png, id=259, 224.84pt x 283.0575pt>
 File: report_images/progress_update_research/classification_malignant.png Graphic file (type png)
 <use report_images/progress_update_research/classification_malignant.png>
 Package pdftex.def Info: report_images/progress_update_research/classification_malignant.png  used on input line 876.
 (pdftex.def)             Requested size: 139.13528pt x 175.16989pt.
-<report_images/progress_update_research/classification_normal.png, id=256, 224.84pt x 283.0575pt>
+<report_images/progress_update_research/classification_normal.png, id=260, 224.84pt x 283.0575pt>
 File: report_images/progress_update_research/classification_normal.png Graphic file (type png)
 <use report_images/progress_update_research/classification_normal.png>
 Package pdftex.def Info: report_images/progress_update_research/classification_normal.png  used on input line 881.
 (pdftex.def)             Requested size: 139.13528pt x 175.16989pt.
  [13 <./report_images/progress_update_research/classification_benign.png (PNG copy)> <./report_images/progress_update_research/classification_malignant.png (PNG copy)> <./report_images/progress_update_research/classification_normal.png (PNG copy)>]
-<report_images/progress_update_research/segmentation_benign.png, id=263, 674.52pt x 283.0575pt>
+<report_images/progress_update_research/segmentation_benign.png, id=267, 674.52pt x 283.0575pt>
 File: report_images/progress_update_research/segmentation_benign.png Graphic file (type png)
 <use report_images/progress_update_research/segmentation_benign.png>
 Package pdftex.def Info: report_images/progress_update_research/segmentation_benign.png  used on input line 893.
 (pdftex.def)             Requested size: 398.85074pt x 167.37822pt.
-<report_images/progress_update_research/segmentation_normal.png, id=264, 674.52pt x 283.0575pt>
+<report_images/progress_update_research/segmentation_normal.png, id=268, 674.52pt x 283.0575pt>
 File: report_images/progress_update_research/segmentation_normal.png Graphic file (type png)
 <use report_images/progress_update_research/segmentation_normal.png>
 Package pdftex.def Info: report_images/progress_update_research/segmentation_normal.png  used on input line 894.
 (pdftex.def)             Requested size: 398.85074pt x 167.37822pt.
-<report_images/progress_update_research/multitask_malignant.png, id=265, 674.52pt x 283.0575pt>
+<report_images/progress_update_research/multitask_malignant.png, id=269, 674.52pt x 283.0575pt>
 File: report_images/progress_update_research/multitask_malignant.png Graphic file (type png)
 <use report_images/progress_update_research/multitask_malignant.png>
 Package pdftex.def Info: report_images/progress_update_research/multitask_malignant.png  used on input line 905.
 (pdftex.def)             Requested size: 398.85074pt x 167.37822pt.
-<report_images/progress_update_research/multitask_normal.png, id=266, 674.52pt x 283.0575pt>
+<report_images/progress_update_research/multitask_normal.png, id=270, 674.52pt x 283.0575pt>
 File: report_images/progress_update_research/multitask_normal.png Graphic file (type png)
 <use report_images/progress_update_research/multitask_normal.png>
 Package pdftex.def Info: report_images/progress_update_research/multitask_normal.png  used on input line 906.
 (pdftex.def)             Requested size: 398.85074pt x 167.37822pt.
  [14 <./report_images/progress_update_research/segmentation_benign.png (PNG copy)> <./report_images/progress_update_research/segmentation_normal.png (PNG copy)>]
-<report_images/progress_update_research/mk_mnet_width05_benign.png, id=272, 674.52pt x 287.0725pt>
+<report_images/progress_update_research/mk_mnet_width05_benign.png, id=276, 674.52pt x 287.0725pt>
 File: report_images/progress_update_research/mk_mnet_width05_benign.png Graphic file (type png)
 <use report_images/progress_update_research/mk_mnet_width05_benign.png>
 Package pdftex.def Info: report_images/progress_update_research/mk_mnet_width05_benign.png  used on input line 917.
 (pdftex.def)             Requested size: 398.85074pt x 169.7524pt.
  [15 <./report_images/progress_update_research/multitask_malignant.png (PNG copy)> <./report_images/progress_update_research/multitask_normal.png (PNG copy)>]
-<report_images/progress_update_research/mk_mnet_width05_malignant.png, id=278, 674.52pt x 287.0725pt>
+<report_images/progress_update_research/mk_mnet_width05_malignant.png, id=282, 674.52pt x 287.0725pt>
 File: report_images/progress_update_research/mk_mnet_width05_malignant.png Graphic file (type png)
 <use report_images/progress_update_research/mk_mnet_width05_malignant.png>
 Package pdftex.def Info: report_images/progress_update_research/mk_mnet_width05_malignant.png  used on input line 926.
 (pdftex.def)             Requested size: 398.85074pt x 169.7524pt.
-<report_images/progress_update_research/mk_mnet_width05_normal.png, id=279, 674.52pt x 287.0725pt>
+<report_images/progress_update_research/mk_mnet_width05_normal.png, id=283, 674.52pt x 287.0725pt>
 File: report_images/progress_update_research/mk_mnet_width05_normal.png Graphic file (type png)
 <use report_images/progress_update_research/mk_mnet_width05_normal.png>
 Package pdftex.def Info: report_images/progress_update_research/mk_mnet_width05_normal.png  used on input line 935.
@@ -1215,46 +1214,51 @@ Overfull \hbox (65.98994pt too wide) in paragraph at lines 1032--1033
  []
 
 
-Underfull \hbox (badness 1895) in paragraph at lines 1054--1054
+Overfull \hbox (47.06944pt too wide) in paragraph at lines 1044--1045
+\T5/cmr/m/n/12 Nh¡nh aug-men-ta-tion com-par-i-son ^^_÷ñc thi¸t k¸ l¤i düa trüc ti¸p tr¶n $\T5/cmtt/m/n/12 docs / ref / data-[]augmentation .
+ []
+
+[19]
+Underfull \hbox (badness 1895) in paragraph at lines 1072--1072
 []|\T5/cmr/m/n/12 Ho n th nh l¦n
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1056--1057
+Underfull \hbox (badness 10000) in paragraph at lines 1074--1075
 []|\T5/cmr/m/n/12 MK-UNet, CMUNeXt v  MA-
  []
 
 
-Underfull \hbox (badness 6428) in paragraph at lines 1058--1059
+Underfull \hbox (badness 6428) in paragraph at lines 1076--1077
 []|\T5/cmr/m/n/12 ^^^¢ triºn khai con-fu-sion ma-trix,
  []
 
 
-Underfull \hbox (badness 4805) in paragraph at lines 1058--1059
+Underfull \hbox (badness 4805) in paragraph at lines 1076--1077
 \T5/cmr/m/n/12 macro/per-class precision--recall--F1,
  []
 
-[19] [20] [21] (build/progress_update_research.aux)
+[20] [21] [22] (build/progress_update_research.aux)
  ***********
 LaTeX2e <2026-06-01>
 L3 programming layer <2026-05-26>
  ***********
 Package rerunfilecheck Info: File `progress_update_research.out' has not changed.
-(rerunfilecheck)             Checksum: 68EE01A02F1F670425315A5806F5DB6C;6012.
+(rerunfilecheck)             Checksum: A917A8F0E448E59449518319D99C0BBE;6332.
  ) 
 Here is how much of TeX's memory you used:
- 31692 strings out of 469157
- 640599 string characters out of 5459586
+ 31697 strings out of 469157
+ 640633 string characters out of 5459586
  1108605 words of memory out of 5000000
- 60122 multiletter control sequences out of 15000+600000
+ 60126 multiletter control sequences out of 15000+600000
  645797 words of font info for 79 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 98i,12n,108p,756b,853s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 98i,12n,108p,700b,853s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnbx12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnbx8.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnr12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnr17.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnr8.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vnti12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vntt12.pfb></Users/dylan/Library/TinyTeX/texmf-dist/fonts/type1/vntex/vnr/vntt8.pfb>
-Output written on build/progress_update_research.pdf (22 pages, 864191 bytes).
+Output written on build/progress_update_research.pdf (23 pages, 867711 bytes).
 PDF statistics:
- 416 PDF objects out of 1000 (max. 8388607)
- 318 compressed objects within 4 object streams
- 82 named destinations out of 1000 (max. 500000)
- 439 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 424 PDF objects out of 1000 (max. 8388607)
+ 325 compressed objects within 4 object streams
+ 84 named destinations out of 1000 (max. 500000)
+ 447 words of extra memory for PDF output out of 10000 (max. 10000000)
 

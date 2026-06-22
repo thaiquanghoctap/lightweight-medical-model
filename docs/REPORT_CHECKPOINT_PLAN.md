@@ -45,6 +45,15 @@ Detailed-evaluation code and the Colab batch notebook are implemented, but the
 three medical-metric items above remain unchecked until real CSV/PNG artifacts
 are generated and inserted into the report.
 
+## Augmentation Comparison Status
+
+- [x] Implement paper-aligned single-augmentation and TrivialAugment policies.
+- [x] Preserve the original fixed pipeline as the `legacy` policy.
+- [x] Add synchronized image-mask previews and resumable Colab batch execution.
+- [ ] Run all selected policies for seeds 42, 123, and 2026.
+- [ ] Add mean ± std comparison tables to the report.
+- [ ] Review geometric transforms visually before using their results.
+
 ## Suggested Grad-CAM Commands
 
 Generate Grad-CAM for MK-MNet width `0.25`:

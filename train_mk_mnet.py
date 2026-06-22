@@ -13,10 +13,11 @@ import torch.nn as nn
 import torch.optim as optim
 from albumentations.pytorch import ToTensorV2
 from PIL import Image
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
+from augmentation_policies import ALL_POLICIES, build_train_transform
 from model import FocalLoss, MKMNet
 
 
@@ -138,22 +139,12 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 
-def build_transforms(image_size):
-    train_transform = A.Compose(
-        [
-            A.Resize(image_size, image_size),
-            A.HorizontalFlip(p=0.5),
-            A.VerticalFlip(p=0.5),
-            A.RandomBrightnessContrast(p=0.2),
-            A.ShiftScaleRotate(
-                shift_limit=0.1,
-                scale_limit=0.1,
-                rotate_limit=20,
-                p=0.5,
-            ),
-            A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ToTensorV2(),
-        ]
+def build_transforms(image_size, augmentation_policy="legacy"):
+    train_transform = build_train_transform(
+        augmentation_policy,
+        image_size,
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ToTensorV2(),
     )
     eval_transform = A.Compose(
         [
@@ -165,8 +156,17 @@ def build_transforms(image_size):
     return train_transform, eval_transform
 
 
-def build_loaders(dataset_dir, image_size, batch_size, num_workers, oversample=False):
-    train_transform, eval_transform = build_transforms(image_size)
+def build_loaders(
+    dataset_dir,
+    image_size,
+    batch_size,
+    num_workers,
+    oversample=False,
+    augmentation_policy="legacy",
+):
+    train_transform, eval_transform = build_transforms(
+        image_size, augmentation_policy=augmentation_policy
+    )
     transforms = {
         "train": train_transform,
         "val": eval_transform,
@@ -235,6 +235,7 @@ def run_epoch(
     }
     all_labels = []
     all_probabilities = []
+    all_predictions = []
 
     with torch.set_grad_enabled(is_training):
         for images, labels, masks in tqdm(loader, desc=description, leave=False):
@@ -284,6 +285,7 @@ def run_epoch(
 
             if collect_probabilities:
                 all_labels.extend(labels.cpu().numpy())
+                all_predictions.extend(classification_logits.argmax(dim=1).cpu().numpy())
                 all_probabilities.extend(
                     torch.softmax(classification_logits, dim=1).cpu().numpy()
                 )
@@ -301,6 +303,10 @@ def run_epoch(
     if collect_probabilities:
         labels = np.asarray(all_labels)
         probabilities = np.asarray(all_probabilities)
+        predictions = np.asarray(all_predictions)
+        metrics["balanced_accuracy"] = 100 * balanced_accuracy_score(
+            labels, predictions
+        )
         try:
             metrics["auc"] = roc_auc_score(labels, probabilities, multi_class="ovr")
         except ValueError:
@@ -333,57 +339,64 @@ def save_epoch_log(path, rows):
 
 def save_result(path, args, parameter_count, best_val_loss, test_metrics, duration):
     should_write_header = not path.exists() or path.stat().st_size == 0
+    columns = [
+        "Image_Size",
+        "Width_Mult",
+        "Lambda",
+        "Aux_Weight",
+        "Deep_Supervision",
+        "Oversample",
+        "Learning_Rate",
+        "Weight_Decay",
+        "Patience",
+        "Seed",
+        "Parameters",
+        "Best_Val_Loss",
+        "Test_Accuracy",
+        "Test_Balanced_Accuracy",
+        "Test_AUC",
+        "Test_Dice",
+        "Test_IoU",
+        "Test_Loss",
+        "Test_Classification_Loss",
+        "Test_Segmentation_Loss",
+        "Training_Time_Min",
+    ]
+    values = [
+        args.image_size,
+        args.width_mult,
+        args.lambda_weight,
+        args.aux_weight,
+        args.deep_supervision,
+        args.oversample,
+        args.learning_rate,
+        args.weight_decay,
+        args.patience,
+        args.seed,
+        parameter_count,
+        best_val_loss,
+        test_metrics["accuracy"],
+        test_metrics["balanced_accuracy"],
+        test_metrics["auc"],
+        test_metrics["dice"],
+        test_metrics["iou"],
+        test_metrics["loss"],
+        test_metrics["classification_loss"],
+        test_metrics["segmentation_loss"],
+        duration / 60,
+    ]
+    if args.augmentation_experiment:
+        columns.insert(6, "Augmentation_Policy")
+        values.insert(6, args.augmentation_policy)
+    else:
+        balanced_index = columns.index("Test_Balanced_Accuracy")
+        columns.pop(balanced_index)
+        values.pop(balanced_index)
     with path.open("a", newline="") as file:
         writer = csv.writer(file)
         if should_write_header:
-            writer.writerow(
-                [
-                    "Image_Size",
-                    "Width_Mult",
-                    "Lambda",
-                    "Aux_Weight",
-                    "Deep_Supervision",
-                    "Oversample",
-                    "Learning_Rate",
-                    "Weight_Decay",
-                    "Patience",
-                    "Seed",
-                    "Parameters",
-                    "Best_Val_Loss",
-                    "Test_Accuracy",
-                    "Test_AUC",
-                    "Test_Dice",
-                    "Test_IoU",
-                    "Test_Loss",
-                    "Test_Classification_Loss",
-                    "Test_Segmentation_Loss",
-                    "Training_Time_Min",
-                ]
-            )
-        writer.writerow(
-            [
-                args.image_size,
-                args.width_mult,
-                args.lambda_weight,
-                args.aux_weight,
-                args.deep_supervision,
-                args.oversample,
-                args.learning_rate,
-                args.weight_decay,
-                args.patience,
-                args.seed,
-                parameter_count,
-                best_val_loss,
-                test_metrics["accuracy"],
-                test_metrics["auc"],
-                test_metrics["dice"],
-                test_metrics["iou"],
-                test_metrics["loss"],
-                test_metrics["classification_loss"],
-                test_metrics["segmentation_loss"],
-                duration / 60,
-            ]
-        )
+            writer.writerow(columns)
+        writer.writerow(values)
 
 
 def train(args):
@@ -401,6 +414,8 @@ def train(args):
         / f"weight_decay_{args.weight_decay:g}"
         / f"patience_{args.patience}"
     )
+    if args.augmentation_experiment:
+        output_dir = output_dir / f"augmentation_{args.augmentation_policy}" / f"seed_{args.seed}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     loaders = build_loaders(
@@ -409,6 +424,7 @@ def train(args):
         args.batch_size,
         args.num_workers,
         oversample=args.oversample,
+        augmentation_policy=args.augmentation_policy,
     )
     model = MKMNet(
         num_classes=len(BUSI_CLASSES),
@@ -424,6 +440,7 @@ def train(args):
     print(f"Parameters: {parameter_count:,}")
     print(f"Deep supervision: {args.deep_supervision}")
     print(f"Lambda (segmentation weight): {args.lambda_weight}")
+    print(f"Augmentation policy: {args.augmentation_policy}")
 
     class_weights = torch.tensor([1.0, 1.0, 1.0], device=device)
     classification_criterion = FocalLoss(gamma=2, alpha=class_weights)
@@ -530,6 +547,7 @@ def train(args):
 
     print(f"Best validation loss: {best_val_loss:.4f}")
     print(f"Test accuracy: {test_metrics['accuracy']:.2f}%")
+    print(f"Test balanced accuracy: {test_metrics['balanced_accuracy']:.2f}%")
     print(f"Test AUC: {test_metrics['auc']:.4f}")
     print(f"Test Dice: {test_metrics['dice']:.4f}")
     print(f"Test IoU: {test_metrics['iou']:.4f}")
@@ -571,6 +589,17 @@ def parse_args():
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--augmentation-policy",
+        choices=ALL_POLICIES,
+        default="legacy",
+        help="Training augmentation policy; legacy preserves the original pipeline.",
+    )
+    parser.add_argument(
+        "--augmentation-experiment",
+        action="store_true",
+        help="Store the run below augmentation_<policy>/seed_<seed> to avoid overwriting main runs.",
+    )
     args = parser.parse_args()
     args.deep_supervision = args.deep_supervision == "true"
     return args

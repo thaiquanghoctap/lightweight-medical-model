@@ -2,7 +2,7 @@ PWD /Users/dylan/Documents/lightweight-medical-model/report
 INPUT /Users/dylan/Library/TinyTeX/texmf.cnf
 INPUT /Users/dylan/Library/TinyTeX/texmf-dist/web2c/texmf.cnf
 INPUT /Users/dylan/Library/TinyTeX/texmf-var/web2c/pdftex/pdflatex.fmt
-INPUT /Users/dylan/Documents/lightweight-medical-model/report/progress_update_research.tex
+INPUT progress_update_research.tex
 OUTPUT build/progress_update_research.log
 INPUT /Users/dylan/Library/TinyTeX/texmf-dist/tex/latex/base/article.cls
 INPUT /Users/dylan/Library/TinyTeX/texmf-dist/tex/latex/base/article.cls

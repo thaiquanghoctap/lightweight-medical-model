@@ -1039,6 +1039,24 @@ Mỗi cấu hình sẽ sinh \path{summary.csv}, \path{per_class_metrics.csv}, \p
     \end{expectbox}
 }
 
+\subsection{Thiết kế augmentation comparison theo paper gốc}
+
+Nhánh augmentation comparison được thiết kế lại dựa trực tiếp trên \path{docs/ref/data-augmentation.pdf}. Thay vì chỉ so sánh một chuỗi augmentation cố định, thí nghiệm đi theo ba mức của paper: no augmentation, từng augmentation riêng lẻ và random sampling từ một pool đa dạng. Model được giữ cố định là MK-MNet width 0.25; oversampling, split dữ liệu, optimizer, learning rate, weight decay, số epoch và các loss weight không thay đổi giữa các policy.
+
+Nhóm single augmentation gồm các phép trong paper như rotation, translation theo trục Y, scaling, horizontal/vertical flip, brightness, contrast, Gaussian noise và elastic transform. Policy \texttt{legacy} tái hiện chính xác fixed sequence cũ của repo. Hai policy \texttt{trivial\_all\_1} và \texttt{trivial\_all\_3} lần lượt lấy ngẫu nhiên một hoặc ba operation từ pool 18 phép của paper. Speckle noise được giữ như một mở rộng riêng cho ultrasound và không được mô tả là phép tái hiện từ paper.
+
+Mỗi policy được chạy với ba seed 42, 123 và 2026 trong 100 epoch không early stopping. Kết quả được trình bày dưới dạng mean \(\pm\) standard deviation cho balanced accuracy, macro-F1, malignant sensitivity/specificity/AUC và lesion-only Dice/IoU. Ba seed trên một split cố định chỉ phản ánh độ ổn định thăm dò, không tương đương protocol \(5\times2\) cross-validation và không được dùng để tuyên bố statistical significance như paper gốc.
+
+Trước khi train, notebook sinh các panel overlay image-mask cho mọi policy để kiểm tra các phép geometric augmentation áp dụng đồng bộ lên ảnh và mask. Batch runner hỗ trợ resume, tách output theo policy/seed và chạy detailed medical evaluation sau từng checkpoint. Các bảng so sánh chỉ được đưa vào báo cáo sau khi \path{comparison_status.csv} xác nhận đủ các run dự kiến.
+
+\IfFileExists{../augmentation-comparison-results/augmentation_comparison_table.tex}{
+    \input{../augmentation-comparison-results/augmentation_comparison_table.tex}
+}{
+    \begin{expectbox}{Trạng thái artifact augmentation comparison}
+    Chưa có bảng mean $\pm$ std từ Colab. Cần kiểm tra preview image-mask và hoàn thành các run trong \path{comparison_status.csv} trước khi kết luận policy nào có lợi, trung tính hoặc gây hại.
+    \end{expectbox}
+}
+
 \subsection{Tiến độ hiện tại và cải tiến dự kiến}
 
 \begin{table}[H]
@@ -1056,14 +1074,14 @@ MK-MNet & Hoàn thành nhiều cấu hình & Width 0.25 rất nhẹ; width 0.5 c
 Baseline ngoài repo & Đã có mốc tham chiếu & MK-UNet, CMUNeXt và MA-DTNET dùng để đọc vị chất lượng segmentation. \\
 Grad-CAM/XAI & Đã có script, chưa có ảnh report & Đã bổ sung \texttt{generate\_gradcam.py} để sinh heatmap từ các checkpoint hiện có; cần chạy script và đưa ảnh Grad-CAM vào \path{report_images/}. \\
 Detailed medical metrics & Đã có evaluator, chờ artifact Colab & Đã triển khai confusion matrix, macro/per-class precision--recall--F1, sensitivity, specificity, AUC và lesion-only Dice/IoU; chỉ hoàn thành sau khi CSV thật được chèn vào báo cáo. \\
-Augmentation chọn lọc & Chưa hoàn thành & Cần bổ sung để nối lại hướng proposal ban đầu. \\
+Augmentation comparison & Đã có code, chờ chạy Colab & Đã triển khai no augmentation, single augmentation, legacy fixed sequence, TrivialAugment và speckle extension; cần kiểm tra preview rồi chạy đủ policy/seed. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{enumerate}[label=\textbf{G\arabic*.}]
     \item \textbf{Chốt cấu hình multi-task đại diện}. MK-MNet width 0.25 có thể dùng làm cấu hình lightweight chính; MK-MNet width 0.5 dùng làm cấu hình ưu tiên segmentation; R-CBAM MNet dùng làm biến thể dựa trên CBAM-RIUNet.
-    \item \textbf{Bổ sung augmentation chọn lọc}. Chạy thêm một nhóm nhỏ augmentation theo proposal ban đầu: rotation nhỏ, brightness/contrast nhẹ, shift/scale vừa phải và speckle noise. Không cần so sánh toàn bộ policy như proposal gốc.
+    \item \textbf{Hoàn thành augmentation comparison}. Kiểm tra preview image-mask, sau đó chạy \path{colab-result/run-augmentation-comparison.ipynb} và báo cáo mean \(\pm\) std theo policy. Phân biệt rõ phép tái hiện từ paper với speckle noise extension của nhóm.
     \item \textbf{Hoàn thiện Grad-CAM/XAI}. Dùng \texttt{generate\_gradcam.py} để sinh heatmap cho các mẫu đúng/sai của classification, đặt cạnh mask thật và mask dự đoán để xem model có nhìn vào vùng tổn thương hay không. Với các run R-CBAM MNet cũ dùng \texttt{best\_joint.pt}; code train mới lưu checkpoint thống nhất dưới tên \texttt{best\_model.pt}.
     \item \textbf{Củng cố metric y khoa}. Chạy \path{colab-result/run-detailed-evaluation.ipynb} trên Colab, kiểm tra \texttt{evaluation\_status.csv}, sau đó đưa confusion matrix, per-class precision/recall/F1, sensitivity và specificity vào báo cáo, đặc biệt cho lớp \textit{malignant}.
     \item \textbf{Bổ sung phân tích trade-off}. So sánh theo ba trục: số tham số, classification metric và segmentation metric. Đây là cách trình bày phù hợp nhất với bài toán lightweight multi-task hiện tại.
