@@ -1,0 +1,6 @@
+policy,seed,training,evaluation,checkpoint
+none,42,completed,completed,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/mk_mnet/img_224/width_0.25/oversample_1/lambda_0.8/lr_0.0003/weight_decay_0.0001/patience_10/augmentation_none/seed_42/best_model.pt
+rotate,42,completed,completed,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/mk_mnet/img_224/width_0.25/oversample_1/lambda_0.8/lr_0.0003/weight_decay_0.0001/patience_10/augmentation_rotate/seed_42/best_model.pt
+translate_y,42,completed,completed,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/mk_mnet/img_224/width_0.25/oversample_1/lambda_0.8/lr_0.0003/weight_decay_0.0001/patience_10/augmentation_translate_y/seed_42/best_model.pt
+scale,42,completed,completed,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/mk_mnet/img_224/width_0.25/oversample_1/lambda_0.8/lr_0.0003/weight_decay_0.0001/patience_10/augmentation_scale/seed_42/best_model.pt
+horizontal_flip,42,completed,completed,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/mk_mnet/img_224/width_0.25/oversample_1/lambda_0.8/lr_0.0003/weight_decay_0.0001/patience_10/augmentation_horizontal_flip/seed_42/best_model.pt

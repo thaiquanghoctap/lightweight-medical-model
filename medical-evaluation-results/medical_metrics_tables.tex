@@ -1,0 +1,110 @@
+\subsubsection*{Tổng quan detailed evaluation (raw)}
+\scriptsize
+\begin{longtable}{p{5.0cm}rrrrr}
+\toprule
+Cấu hình & Accuracy & Macro-F1 & AUC & Dice lesion & IoU lesion \\
+\midrule
+\endfirsthead
+\toprule
+Cấu hình & Accuracy & Macro-F1 & AUC & Dice lesion & IoU lesion \\
+\midrule
+\endhead
+classification\_\_img\_224\_\_cbam\_\_run\_1 & 0.8167 & 0.8017 & 0.9355 & -- & -- \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7917 & 0.7711 & 0.8988 & 0.7658 & 0.6746 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7750 & 0.7950 & 0.9415 & 0.7775 & 0.6880 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7917 & 0.7669 & 0.9150 & 0.7677 & 0.6756 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8500 & 0.8378 & 0.9646 & 0.8023 & 0.7095 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8167 & 0.8093 & 0.9368 & 0.7916 & 0.7055 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8333 & 0.8369 & 0.9554 & 0.8011 & 0.7152 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7833 & 0.7712 & 0.9225 & 0.7582 & 0.6714 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8083 & 0.8173 & 0.9284 & 0.7643 & 0.6767 \\
+\bottomrule
+\end{longtable}
+\normalsize
+\subsubsection*{Medical metrics theo lớp (raw)}
+\scriptsize
+\begin{longtable}{p{4.2cm}lrrrrrr}
+\toprule
+Cấu hình & Lớp & Precision & Sensitivity & Specificity & F1 & AUC & N \\
+\midrule
+\endfirsthead
+\toprule
+Cấu hình & Lớp & Precision & Sensitivity & Specificity & F1 & AUC & N \\
+\midrule
+\endhead
+classification\_\_img\_224\_\_cbam\_\_run\_1 & benign & 0.8750 & 0.8358 & 0.8491 & 0.8550 & 0.9333 & 67 \\
+classification\_\_img\_224\_\_cbam\_\_run\_1 & malignant & 0.7500 & 0.7500 & 0.9091 & 0.7500 & 0.9258 & 32 \\
+classification\_\_img\_224\_\_cbam\_\_run\_1 & normal & 0.7500 & 0.8571 & 0.9394 & 0.8000 & 0.9476 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8485 & 0.8358 & 0.8113 & 0.8421 & 0.8854 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.7097 & 0.6875 & 0.8977 & 0.6984 & 0.8683 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.7391 & 0.8095 & 0.9394 & 0.7727 & 0.9428 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.9200 & 0.6866 & 0.9245 & 0.7863 & 0.9183 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.5686 & 0.9062 & 0.7500 & 0.6988 & 0.9279 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.9474 & 0.8571 & 0.9899 & 0.9000 & 0.9784 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8730 & 0.8209 & 0.8491 & 0.8462 & 0.8854 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.7059 & 0.7500 & 0.8864 & 0.7273 & 0.9073 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.6957 & 0.7619 & 0.9293 & 0.7273 & 0.9524 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8472 & 0.9104 & 0.7925 & 0.8777 & 0.9513 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.8065 & 0.7812 & 0.9318 & 0.7937 & 0.9531 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.9412 & 0.7619 & 0.9899 & 0.8421 & 0.9894 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8507 & 0.8507 & 0.8113 & 0.8507 & 0.9285 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.7059 & 0.7500 & 0.8864 & 0.7273 & 0.8974 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.8947 & 0.8095 & 0.9798 & 0.8500 & 0.9846 & 21 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.9310 & 0.8060 & 0.9245 & 0.8640 & 0.9366 & 67 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.6512 & 0.8750 & 0.8295 & 0.7467 & 0.9339 & 32 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.9474 & 0.8571 & 0.9899 & 0.9000 & 0.9957 & 21 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8209 & 0.8209 & 0.7736 & 0.8209 & 0.8986 & 67 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.7143 & 0.6250 & 0.9091 & 0.6667 & 0.9116 & 32 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.7600 & 0.9048 & 0.9394 & 0.8261 & 0.9572 & 21 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & benign & 0.8966 & 0.7761 & 0.8868 & 0.8320 & 0.9186 & 67 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & malignant & 0.6279 & 0.8438 & 0.8182 & 0.7200 & 0.8896 & 32 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & normal & 0.9474 & 0.8571 & 0.9899 & 0.9000 & 0.9769 & 21 \\
+\bottomrule
+\end{longtable}
+\normalsize
+\subsubsection*{Đánh giá riêng lớp malignant (raw)}
+\scriptsize
+\begin{longtable}{p{5.2cm}rrrrr}
+\toprule
+Cấu hình & Precision & Sensitivity & Specificity & F1 & AUC \\
+\midrule
+\endfirsthead
+\toprule
+Cấu hình & Precision & Sensitivity & Specificity & F1 & AUC \\
+\midrule
+\endhead
+classification\_\_img\_224\_\_cbam\_\_run\_1 & 0.7500 & 0.7500 & 0.9091 & 0.7500 & 0.9258 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7097 & 0.6875 & 0.8977 & 0.6984 & 0.8683 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.5686 & 0.9062 & 0.7500 & 0.6988 & 0.9279 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7059 & 0.7500 & 0.8864 & 0.7273 & 0.9073 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8065 & 0.7812 & 0.9318 & 0.7937 & 0.9531 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7059 & 0.7500 & 0.8864 & 0.7273 & 0.8974 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.6512 & 0.8750 & 0.8295 & 0.7467 & 0.9339 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7143 & 0.6250 & 0.9091 & 0.6667 & 0.9116 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.6279 & 0.8438 & 0.8182 & 0.7200 & 0.8896 \\
+\bottomrule
+\end{longtable}
+\normalsize
+\subsubsection*{Prediction-refining ablation}
+Bảng này là kết quả hậu xử lý, không thay thế kết quả raw.
+\scriptsize
+\begin{longtable}{p{5.0cm}rrrrr}
+\toprule
+Cấu hình & Accuracy & Macro-F1 & AUC & Dice lesion & IoU lesion \\
+\midrule
+\endfirsthead
+\toprule
+Cấu hình & Accuracy & Macro-F1 & AUC & Dice lesion & IoU lesion \\
+\midrule
+\endhead
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7750 & 0.7607 & 0.8988 & 0.7307 & 0.6480 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_25\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7583 & 0.7709 & 0.9415 & 0.7641 & 0.6779 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7917 & 0.7716 & 0.9150 & 0.7234 & 0.6382 \\
+mk\_mnet\_\_img\_224\_\_width\_0\_5\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8583 & 0.8535 & 0.9646 & 0.7848 & 0.6940 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8167 & 0.8139 & 0.9368 & 0.7752 & 0.6915 \\
+mk\_mnet\_\_img\_224\_\_width\_1\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8333 & 0.8388 & 0.9554 & 0.7884 & 0.7050 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_0\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.7833 & 0.7757 & 0.9225 & 0.7185 & 0.6387 \\
+r\_cbam\_mnet\_\_img\_224\_\_oversample\_1\_\_lambda\_0\_8\_\_lr\_0\_0003\_\_weight\_decay\_0\_0001\_\_patience\_10 & 0.8000 & 0.8085 & 0.9284 & 0.7554 & 0.6687 \\
+\bottomrule
+\end{longtable}
+\normalsize

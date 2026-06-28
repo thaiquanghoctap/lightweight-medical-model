@@ -1,0 +1,4 @@
+true_class,pred_benign,pred_malignant,pred_normal
+benign,55,7,5
+malignant,11,20,1
+normal,1,1,19

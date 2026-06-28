@@ -1,0 +1,143 @@
+\providecommand{\appendixevidencedir}{report/report_images/appendix_evidence}
+
+\section*{Appendix: Additional Experiments and Qualitative Analysis}
+
+This appendix complements the main DAMK-Net results with three supporting analyses that are useful for interpreting the model beyond aggregate accuracy and Dice. First, we report a detailed medical evaluation with class-wise metrics and prediction-refinement analysis. Second, we provide Grad-CAM visualizations to inspect whether the shared encoder attends to lesion-relevant regions. Third, we include an exploratory augmentation study to check whether common ultrasound-safe transformations improve robustness. These experiments are reported as supporting material; the main claims of the paper should continue to rely on the primary BUSI comparison in the main text.
+
+\subsection*{A. Detailed Medical Evaluation Protocol}
+
+The detailed evaluator was run on the BUSI test set with 120 images. Each image has a three-class label, \textit{benign}, \textit{malignant}, or \textit{normal}; benign and malignant images have lesion masks, while normal images use empty masks. The evaluator records predictions for every image and reports both classification and segmentation metrics.
+
+For classification, we report accuracy, macro precision, macro recall, macro F1, and one-vs-rest AUC. Per-class precision, sensitivity/recall, specificity, F1, AUC, and support are also exported. Sensitivity and specificity are computed in a one-vs-rest manner:
+
+\[
+\mathrm{Sensitivity}_c = \frac{TP_c}{TP_c+FN_c},
+\qquad
+\mathrm{Specificity}_c = \frac{TN_c}{TN_c+FP_c}.
+\]
+
+For segmentation, Dice and IoU are reported in two scopes. The all-image score averages over benign, malignant, and normal images. The lesion-only score averages only over benign and malignant images and is the preferred measure of lesion localization quality, because empty normal masks can otherwise inflate the all-image metric. We separately report normal Dice to measure whether the segmentation head correctly leaves normal scans empty.
+
+For multi-task models, we evaluate both raw predictions and refined predictions. The refinement step uses a mask threshold of 0.5 and an area threshold of 0.005. If the predicted tumor area is smaller than the area threshold, the image label is changed to \textit{normal}; if the final class is \textit{normal}, the predicted mask is set to empty. This step is not a learned module. It is a deterministic inference-time consistency rule between the classification and segmentation heads.
+
+\subsection*{B. Detailed Medical Evaluation Results}
+
+Before presenting the quantitative results, the detailed evaluation is organized around three analysis questions. The first question is whether the compact MK-MNet variants preserve the diagnostic classification ability required for benign, malignant, and normal ultrasound images. The second question is whether the segmentation branch localizes lesions reliably on abnormal images, rather than only improving the classification head. The third question is whether the multi-task output is clinically coherent on normal scans, where a correct class prediction should be paired with an empty segmentation mask. This last point is important because a model can obtain a correct \textit{normal} label while still producing a small false-positive lesion mask.
+
+The detailed evaluation metrics should be interpreted jointly rather than as independent scores. Accuracy reports the overall three-class correctness on the 120-image BUSI test split. Macro precision, macro recall, and macro F1 give equal weight to benign, malignant, and normal classes, so they are more informative than accuracy when class frequencies differ. One-vs-rest AUC measures how well the model ranks each class before the final argmax decision. Lesion Dice measures spatial agreement only on benign and malignant images, and is therefore the main segmentation metric for tumor localization. Normal Dice measures whether the segmentation branch correctly predicts an empty mask for normal ultrasound scans; this metric is clinically important because a non-empty mask on a normal case acts as a false-positive lesion cue.
+
+The comparison therefore separates classification quality, lesion localization, and normal-mask consistency. A useful operating point should not be selected by accuracy alone: it should also maintain a high macro F1, preserve malignant sensitivity, produce strong lesion Dice on benign and malignant cases, and avoid non-empty masks on normal cases. Prediction refinement is evaluated under this interpretation. It is not intended to increase every metric simultaneously; instead, it tests whether a simple consistency rule can reduce normal-case false positives while keeping lesion localization and malignant detection within an acceptable range.
+
+Table~\ref{tab:appendix_detailed_eval} summarizes the MK-MNet width family under deterministic oversampling (OS) and prediction refinement (PR). The width 0.5 model with oversampling gives the strongest classification operating point among the evaluated MK-MNet variants. In the raw setting, it reaches 85.00\% accuracy, 0.965 AUC, 0.838 macro F1, and 80.23\% lesion Dice. After prediction refinement, accuracy increases to 85.83\%, macro F1 increases to 0.853, and normal Dice increases from 52.38\% to 85.71\%. Lesion Dice decreases from 80.23\% to 78.48\%, showing the expected trade-off: refinement suppresses false-positive normal masks, but can remove a small predicted lesion when the predicted area falls below the threshold.
+
+\begin{table}[h]
+\centering
+\caption{Detailed MK-MNet evaluation on BUSI. OS denotes deterministic oversampling and PR denotes prediction refinement. Accuracy and Dice values are percentages.}
+\begin{tabular}{lcccccc}
+\toprule
+Model & OS & PR & Acc. & AUC & Dice$_{lesion}$ & Dice$_{normal}$ \\
+\midrule
+MK-MNet-T, $w=0.25$ & no  & no  & 79.17 & 0.899 & 76.58 & 28.57 \\
+MK-MNet-T, $w=0.25$ & yes & no  & 77.50 & 0.942 & 77.75 & 61.90 \\
+MK-MNet-S, $w=0.5$  & no  & no  & 79.17 & 0.915 & 76.77 & 33.33 \\
+MK-MNet-S, $w=0.5$  & yes & no  & 85.00 & 0.965 & 80.23 & 52.38 \\
+MK-MNet-S, $w=0.5$  & yes & yes & 85.83 & 0.965 & 78.48 & 85.71 \\
+MK-MNet, $w=1.0$    & no  & no  & 81.67 & 0.937 & 79.16 & 42.86 \\
+MK-MNet, $w=1.0$    & no  & yes & 81.67 & 0.937 & 77.52 & 90.48 \\
+MK-MNet, $w=1.0$    & yes & no  & 83.33 & 0.955 & 80.11 & 61.90 \\
+MK-MNet, $w=1.0$    & yes & yes & 83.33 & 0.955 & 78.84 & 90.48 \\
+\bottomrule
+\end{tabular}
+\label{tab:appendix_detailed_eval}
+\end{table}
+
+Table~\ref{tab:appendix_per_class_eval} expands the best operating point, MK-MNet-S with oversampling and prediction refinement, into per-class medical metrics. Benign sensitivity is 89.55\%, malignant sensitivity is 78.13\%, and normal sensitivity is 85.71\%. The malignant specificity is 94.32\%, meaning that most non-malignant scans are not incorrectly assigned to the malignant class. The normal specificity is 97.98\%, which supports the use of the refinement rule for suppressing false-positive normal-case predictions. The class-wise AUC values are all above 0.95, with the normal class reaching 0.989, indicating strong probability ranking even when final class decisions still contain benign--malignant confusion.
+
+\begin{table}[h]
+\centering
+\caption{Per-class detailed medical metrics for MK-MNet-S with oversampling and prediction refinement. Precision, sensitivity, specificity, Dice, and IoU values are percentages.}
+\begin{tabular}{lccccccc}
+\toprule
+Class & Prec. & Sens. & Spec. & F1 & AUC & Dice & IoU \\
+\midrule
+Benign    & 85.71 & 89.55 & 81.13 & 0.876 & 0.951 & 77.93 & 69.96 \\
+Malignant & 83.33 & 78.13 & 94.32 & 0.806 & 0.953 & 79.64 & 68.24 \\
+Normal    & 90.00 & 85.71 & 97.98 & 0.878 & 0.989 & 85.71 & 85.71 \\
+\bottomrule
+\end{tabular}
+\label{tab:appendix_per_class_eval}
+\end{table}
+
+The full-width model further confirms the role of the refinement rule. Without oversampling, normal Dice improves from 42.86\% to 90.48\% after refinement, while classification accuracy is unchanged at 81.67\%. With oversampling, the full-width model reaches 83.33\% raw accuracy, 0.955 AUC, 80.11\% lesion Dice, and 61.90\% normal Dice; refinement again raises normal Dice to 90.48\%. These results indicate that the two-head multi-task model does not automatically enforce consistency on normal scans, and that the deterministic refinement step is useful for clinical false-positive control.
+
+\subsection*{C. Confusion Matrix Analysis}
+
+Figure~\ref{fig:appendix_confusion} shows the raw and refined confusion matrices for MK-MNet-S with oversampling. The refined matrix keeps all malignant images away from the normal class: 25 out of 32 malignant images are classified as malignant and 7 are classified as benign, while none are classified as normal. For normal scans, 18 out of 21 images are correctly classified as normal after refinement. This supports the interpretation that refinement mainly improves normal-case coherence rather than simply pushing all uncertain images into the normal class.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.47\textwidth]{\appendixevidencedir/confusion_mk_mnet_s_os_raw.png}
+\hfill
+\includegraphics[width=0.47\textwidth]{\appendixevidencedir/confusion_mk_mnet_s_os_refined.png}
+\caption{Raw and refined confusion matrices for MK-MNet-S with oversampling.}
+\label{fig:appendix_confusion}
+\end{figure}
+
+\subsection*{D. Grad-CAM Qualitative Analysis}
+
+Grad-CAM was generated from the last encoder stage to inspect the spatial evidence used by the classification head. Figure~\ref{fig:appendix_gradcam} shows three representative cases. Each row contains the input image, ground-truth mask, predicted mask, Grad-CAM heatmap, and Grad-CAM overlay.
+
+In the benign case, the predicted mask overlaps the ground-truth lesion and the Grad-CAM response is concentrated near the same region. In the malignant case, both the predicted mask and the strongest Grad-CAM response are near the lesion boundary. These two cases suggest that the shared encoder learns lesion-centered features that can support both classification and segmentation. The normal case is intentionally included as a failure example: although the classification head predicts \textit{normal}, the segmentation head produces a small false-positive mask and the Grad-CAM response is diffuse over textured tissue. This visual pattern matches the quantitative normal-class issue observed before prediction refinement.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{\appendixevidencedir/gradcam_benign_good.png}\\
+\vspace{0.4em}
+\includegraphics[width=\textwidth]{\appendixevidencedir/gradcam_malignant_good.png}\\
+\vspace{0.4em}
+\includegraphics[width=\textwidth]{\appendixevidencedir/gradcam_normal_false_positive.png}
+\caption{Grad-CAM examples for MK-MNet. The benign and malignant cases show lesion-centered activation. The normal case illustrates a false-positive segmentation response and diffuse attention.}
+\label{fig:appendix_gradcam}
+\end{figure}
+
+These visualizations are qualitative and should not be interpreted as localization metrics. They are useful for error analysis because they reveal when classification evidence and segmentation evidence are spatially aligned, and when healthy tissue texture can still trigger a false-positive response.
+
+\subsection*{E. Exploratory Augmentation Study}
+
+The augmentation experiment was designed as a small follow-up to the original augmentation motivation of the project. We fixed the model to MK-MNet-T with width 0.25 and deterministic oversampling, then compared five completed policies: no augmentation, small rotation, vertical translation, scaling, and horizontal flip. Each policy currently has one completed seed, so this experiment is exploratory and does not support statistical significance claims.
+
+Table~\ref{tab:appendix_augmentation} shows the current results. All completed augmentation policies improve lesion Dice over the no-augmentation baseline. Rotation and horizontal flip obtain the highest accuracy at 74.17\%. Vertical translation obtains the highest AUC, lesion Dice, and malignant sensitivity, reaching 0.923 AUC, 76.05\% lesion Dice, and 93.75\% malignant sensitivity. Scaling obtains a similar malignant sensitivity of 93.75\% and lesion Dice of 75.47\%.
+
+\begin{table}[h]
+\centering
+\caption{Exploratory augmentation comparison with MK-MNet-T. Each policy was run with one seed, so the results should be interpreted as preliminary. Accuracy and Dice values are percentages.}
+\begin{tabular}{lccccc}
+\toprule
+Policy & Acc. & Macro-F1 & AUC & Dice$_{lesion}$ & Malig. Sens. \\
+\midrule
+None            & 66.67 & 0.662 & 0.853 & 63.53 & 84.38 \\
+Rotation        & 74.17 & 0.718 & 0.891 & 75.14 & 78.13 \\
+Translate-Y     & 70.83 & 0.721 & 0.923 & 76.05 & 93.75 \\
+Scale           & 70.00 & 0.694 & 0.918 & 75.47 & 93.75 \\
+Horizontal flip & 74.17 & 0.724 & 0.897 & 66.92 & 84.38 \\
+\bottomrule
+\end{tabular}
+\label{tab:appendix_augmentation}
+\end{table}
+
+Figure~\ref{fig:appendix_aug_preview} shows representative augmentation previews. The image and lesion mask remain synchronized after geometric transformations. This check is important for ultrasound segmentation, because an augmentation policy that transforms the image without applying the same spatial transform to the mask would corrupt the supervision signal.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.48\textwidth]{\appendixevidencedir/aug_preview_none.png}
+\includegraphics[width=0.48\textwidth]{\appendixevidencedir/aug_preview_rotate.png}\\
+\vspace{0.4em}
+\includegraphics[width=0.48\textwidth]{\appendixevidencedir/aug_preview_translate_y.png}
+\includegraphics[width=0.48\textwidth]{\appendixevidencedir/aug_preview_scale.png}
+\caption{Augmentation previews showing synchronized image-mask transformations.}
+\label{fig:appendix_aug_preview}
+\end{figure}
+
+\subsection*{F. Appendix Summary}
+
+The additional analyses strengthen the interpretation of DAMK-Net in three ways. The detailed medical metrics show that MK-MNet-S with oversampling is the best balanced configuration among the evaluated variants, especially after prediction refinement. The confusion matrices and normal-class Dice confirm that the refinement step addresses a real inconsistency between classification and segmentation on normal scans. The Grad-CAM panels provide qualitative evidence that benign and malignant predictions often rely on lesion-centered features, while the normal failure case explains why explicit normal handling is still needed. The augmentation study suggests that mild geometric augmentation can improve lesion localization and malignant sensitivity, but this result remains preliminary until more seeds or cross-validation runs are completed.

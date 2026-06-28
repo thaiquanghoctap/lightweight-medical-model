@@ -1,0 +1,2 @@
+variant,model,checkpoint,samples,accuracy,macro_precision,macro_recall,macro_f1,macro_auc_ovr,dice_all,iou_all,dice_lesion,iou_lesion,mask_threshold,area_threshold
+raw,mednet,/content/drive/MyDrive/Master/LTAINC/lightweight-medical-model/outputs/busi/classification/img_224/cbam/run_1/best_model.pt,120,0.8166666666666667,0.7916666666666666,0.814321250888415,0.8016539440203562,0.9355368115624175,,,,,,

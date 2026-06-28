@@ -1,4 +1,4 @@
-"""Discover and evaluate every completed BUSI classification-capable run."""
+"""Discover and evaluate completed BUSI MK-MNet runs."""
 
 import argparse
 import csv
@@ -9,12 +9,8 @@ from pathlib import Path
 
 
 TASK_MODELS = {
-    "classification": "mednet",
-    "classification_cu": "mednet",
-    "multi": "multitask",
     "mk_mnet": "mk_mnet",
     "mk_mnet_cu": "mk_mnet",
-    "r_cbam_mnet": "r_cbam_mnet",
 }
 
 
@@ -298,7 +294,7 @@ def run(args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run detailed evaluation for all BUSI checkpoints.")
+    parser = argparse.ArgumentParser(description="Run detailed evaluation for BUSI MK-MNet checkpoints.")
     parser.add_argument("--outputs-root", type=Path, default=Path("outputs"))
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
     parser.add_argument("--output-root", type=Path, default=Path("medical-evaluation-results"))
