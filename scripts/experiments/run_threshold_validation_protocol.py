@@ -108,17 +108,17 @@ def main():
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path("threshold-validation-protocol-results"),
+        default=Path("artifacts/threshold-validation-protocol"),
     )
     parser.add_argument(
         "--runner",
         type=Path,
-        default=Path("run_threshold_sensitivity.py"),
+        default=Path("scripts/experiments/run_threshold_sensitivity.py"),
     )
     parser.add_argument(
         "--evaluator",
         type=Path,
-        default=Path("evaluate_medical_metrics.py"),
+        default=Path("scripts/evaluation/evaluate_medical_metrics.py"),
     )
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--width-mult", type=float, default=1.0)

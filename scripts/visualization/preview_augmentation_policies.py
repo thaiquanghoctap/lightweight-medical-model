@@ -62,7 +62,7 @@ def run(args):
 def parse_args():
     parser = argparse.ArgumentParser(description="Preview synchronized BUSI augmentations.")
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
-    parser.add_argument("--output-dir", type=Path, default=Path("augmentation-comparison-results/previews"))
+    parser.add_argument("--output-dir", type=Path, default=Path("artifacts/augmentation-comparison/previews"))
     parser.add_argument("--class-name", choices=("benign", "malignant"), default="malignant")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--samples", type=int, default=4)

@@ -15,8 +15,12 @@ from sklearn.metrics import roc_auc_score
 from torch.utils.data import DataLoader
 
 from model import RCBAMMNet
-from train_r_cbam_mnet import BUSI_CLASSES, BUSIMultiTaskDataset, build_transforms
-from evaluate_mk_mnet import (
+from scripts.training.train_r_cbam_mnet import (
+    BUSI_CLASSES,
+    BUSIMultiTaskDataset,
+    build_transforms,
+)
+from scripts.evaluation.evaluate_mk_mnet import (
     per_sample_segmentation,
     prediction_refine,
     print_report,

@@ -1,172 +1,190 @@
-# Lightweight MedNet
+# Lightweight Medical Model
 
-This project contains a cleaned-up version of the original MedNet source code.
+Research repo for lightweight breast-ultrasound CAD experiments on BUSI, with
+single-task baselines, multi-task models, evaluation utilities, and exported
+artifacts used in the course report.
 
-## Files
-
-```text
-preprocess.py   Prepare MedMNIST or BUSI data for classification
-model.py        MedNet architecture and focal loss
-train.py        Train MedNet with configurable ablation settings
-train_busi_classification.py
-                Train MedNet on BUSI classification images only
-train_busi_segmentation.py
-                Train MedNet segmentation on BUSI image-mask pairs
-train_busi_multi.py
-                Train shared-backbone classification and segmentation on BUSI
-test_busi_classification.py
-                Create annotated BUSI classification test images
-test_busi_segmentation.py
-                Create BUSI segmentation comparison panels
-test_busi_multi.py
-                Create BUSI multi-task comparison panels
-data/           Original MedMNIST .npz files
-outputs/        Training outputs
-```
-
-Supported datasets:
+## Repository layout
 
 ```text
-bloodmnist
-breastmnist
-dermamnist
-octmnist
-busi
+.
+├── artifacts/            # exported experiment results kept with the repo
+│   ├── augmentation-comparison/
+│   ├── gradcam/
+│   ├── medical-evaluation/
+│   ├── model-profiles/
+│   └── threshold-sensitivity/
+├── docs/                 # project notes, proposal, report planning
+├── notebooks/colab/      # Colab notebooks used to reproduce larger runs
+├── report/               # auxiliary report material inside the repo
+├── scripts/
+│   ├── analysis/         # profiling and summary utilities
+│   ├── evaluation/       # detailed metric evaluators
+│   ├── experiments/      # orchestration runners
+│   ├── reporting/        # report/export helpers
+│   ├── training/         # train entrypoints
+│   └── visualization/    # Grad-CAM, previews, qualitative panels
+├── tests/                # unit tests
+├── third_party/          # external templates and reference material
+├── augmentation_policies.py
+├── model.py
+├── preprocess.py
+├── pyproject.toml
+└── uv.lock
 ```
 
-## Preprocess A Dataset
+## Quick start
 
 ```bash
 uv sync
-uv run preprocess.py --dataset bloodmnist
 ```
 
-The processed images are written to:
-
-```text
-data/<dataset>/train/
-data/<dataset>/val/
-data/<dataset>/test/
-```
-
-Each class contains an `images/` folder. BUSI classes also contain a `masks/`
-folder:
-
-```text
-data/busi/train/
-├── benign/
-│   ├── images/
-│   └── masks/
-├── malignant/
-│   ├── images/
-│   └── masks/
-└── normal/
-    ├── images/
-    └── masks/
-```
-
-To read `data/busi_224.npz` and write the BUSI image folders:
+### Prepare BUSI data
 
 ```bash
 uv run preprocess.py --dataset busi --overwrite
 ```
 
-Use `--overwrite` to replace an existing processed dataset.
-
-## Train A Dataset
-
-```bash
-uv run train.py --dataset bloodmnist
-```
-
-To train BUSI using classification images while ignoring masks:
-
-```bash
-uv run train_busi_classification.py
-```
-
-To train BUSI segmentation using image-mask pairs:
-
-```bash
-uv run train_busi_segmentation.py
-```
-
-To train BUSI classification and segmentation together:
-
-```bash
-uv run train_busi_multi.py
-```
-
-## Visualize BUSI Test Predictions
-
-After training, create annotated images from the BUSI test split:
-
-```bash
-uv run test_busi_classification.py
-uv run test_busi_segmentation.py
-uv run test_busi_multi.py
-```
-
-The generated PNG files are written to:
+Expected split layout:
 
 ```text
-outputs/busi/classification/img_224/test_images/
-outputs/busi/segmentation/img_224/test_images/
-outputs/busi/multi/img_224/test_images/
+data/busi/
+├── train/
+├── val/
+└── test/
 ```
 
-Use `--num-samples`, `--checkpoint`, or `--output-dir` to change the test
-settings.
+Each class contains `images/`; BUSI lesion classes also contain `masks/`.
 
-The default command trains one model:
+## Training entrypoints
 
-```text
-image size: 224x224
-CBAM: enabled
-runs: 1
-```
+Run the scripts as Python modules from repo root.
 
-To run the original ablation study:
+### MedNet classification
 
 ```bash
-uv run train.py \
-  --dataset bloodmnist \
-  --img-sizes 384 224 28 \
-  --cbam both \
-  --runs 3
+uv run python -m scripts.training.train_busi_classification
 ```
 
-This starts `3 image sizes x 2 CBAM modes x 3 runs = 18` training sessions.
+### Segmentation-only baseline
 
-Outputs are written to:
-
-```text
-outputs/<dataset>/
-├── results.csv
-└── img_<size>/
-    ├── cbam/
-    │   └── run_<number>/
-    │       ├── best_model.pt
-    │       ├── epoch_log.csv
-    │       └── result.csv
-    └── nocbam/
-        └── run_<number>/
+```bash
+uv run python -m scripts.training.train_busi_segmentation
 ```
 
-BUSI outputs are grouped by task:
+### Multi-task MedNet baseline
 
-```text
-outputs/busi/
-├── classification/
-│   ├── result.csv
-│   └── img_224/
-├── segmentation/
-│   ├── result.csv
-│   └── img_224/
-└── multi/
-    ├── result.csv
-    └── img_224/
+```bash
+uv run python -m scripts.training.train_busi_multi
 ```
 
-Each completed BUSI training session appends one row to the `result.csv` file
-inside its task folder.
+### MK-MNet / DAMK-Net style model
+
+```bash
+uv run python -m scripts.training.train_mk_mnet
+```
+
+### R-CBAM MNet decoder ablation
+
+```bash
+uv run python -m scripts.training.train_r_cbam_mnet
+```
+
+Default training checkpoints are written under `outputs/`.
+
+## Evaluation and experiment runners
+
+### Detailed medical evaluation for one checkpoint
+
+```bash
+uv run python -m scripts.evaluation.evaluate_medical_metrics \
+  --model mk_mnet \
+  --checkpoint outputs/busi/mk_mnet/.../best_model.pt \
+  --dataset-dir data/busi \
+  --output-dir artifacts/medical-evaluation/manual_run
+```
+
+### Batch evaluation of discovered BUSI checkpoints
+
+```bash
+uv run python -m scripts.experiments.run_all_medical_evaluations
+```
+
+### Multi-seed augmentation comparison
+
+```bash
+uv run python -m scripts.experiments.run_augmentation_comparison \
+  --dataset-dir data/busi \
+  --policies none rotate translate_y scale horizontal_flip \
+  --seeds 42 123 2026 \
+  --resume
+```
+
+### Threshold sensitivity on a single split
+
+```bash
+uv run python -m scripts.experiments.run_threshold_sensitivity \
+  --model mk_mnet \
+  --checkpoint outputs/busi/mk_mnet/.../best_model.pt \
+  --dataset-dir data/busi \
+  --split test \
+  --output-root artifacts/threshold-sensitivity
+```
+
+### Validation-first threshold selection
+
+```bash
+uv run python -m scripts.experiments.run_threshold_validation_protocol \
+  --model mk_mnet \
+  --checkpoint outputs/busi/mk_mnet/.../best_model.pt \
+  --dataset-dir data/busi \
+  --resume
+```
+
+### Model profiling
+
+```bash
+uv run python -m scripts.analysis.profile_models \
+  --models mednet mk_mnet r_cbam_mnet \
+  --width-mults 0.25 0.5 1.0 \
+  --output artifacts/model-profiles/profile.csv
+```
+
+### Grad-CAM generation
+
+```bash
+uv run python -m scripts.visualization.generate_gradcam \
+  --model mk_mnet \
+  --checkpoint outputs/busi/mk_mnet/.../best_model.pt \
+  --dataset-dir data/busi \
+  --target-class true
+```
+
+## Artifact folders
+
+- `artifacts/augmentation-comparison/`: policy-by-seed runs, preview images,
+  and aggregated mean/std tables.
+- `artifacts/gradcam/`: exported Grad-CAM panels for MedNet, MK-MNet, and
+  ablations.
+- `artifacts/medical-evaluation/`: raw/refined per-class metrics, predictions,
+  and confusion matrices.
+
+These folders are versioned because they are used directly in the report.
+
+## House style
+
+- Keep reusable entrypoints under `scripts/`, grouped by purpose.
+- Keep exported figures, CSVs, and tables under `artifacts/`.
+- Keep heavyweight checkpoints under `outputs/` only; they are not versioned.
+- Keep one-off notes and planning material under `docs/`.
+- Treat `notebooks/colab/` as optional reproduction helpers, not the main API.
+
+## Notes
+
+- `scripts/` now holds operational entrypoints; the repo root is intentionally
+  kept small.
+- `notebooks/colab/` contains older Colab notebooks. They may still reference
+  legacy paths and should be treated as supporting material, not the primary
+  interface.
+- `third_party/` contains external template material that is not part of the
+  core modeling code.

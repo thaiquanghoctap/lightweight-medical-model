@@ -1,7 +1,7 @@
 # Augmentation comparison results
 
-Kết quả được sinh bởi `run_augmentation_comparison.py` và notebook
-`colab-result/run-augmentation-comparison.ipynb`.
+Kết quả được sinh bởi `scripts.experiments.run_augmentation_comparison` và
+notebook `notebooks/colab/run-augmentation-comparison.ipynb`.
 
 Thiết kế mặc định dùng MK-MNet width 0.25, oversampling cố định, 100 epoch và
 ba seed (`42`, `123`, `2026`). Raw medical metrics là kết quả chính.

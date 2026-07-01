@@ -1,6 +1,6 @@
 # Detailed medical evaluation results
 
-Thư mục này nhận kết quả từ `run_all_medical_evaluations.py`.
+Thư mục này nhận kết quả từ `scripts.experiments.run_all_medical_evaluations`.
 
 Mỗi cấu hình có một thư mục riêng chứa:
 

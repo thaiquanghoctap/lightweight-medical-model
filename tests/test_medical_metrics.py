@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from evaluate_medical_metrics import (
+from scripts.evaluation.evaluate_medical_metrics import (
     classification_metrics,
     normalized_confusion,
     refine_predictions,

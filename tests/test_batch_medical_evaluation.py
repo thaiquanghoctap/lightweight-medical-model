@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from run_all_medical_evaluations import generate_latex, tex_escape
+from scripts.experiments.run_all_medical_evaluations import generate_latex, tex_escape
 
 
 class BatchMedicalEvaluationTest(unittest.TestCase):

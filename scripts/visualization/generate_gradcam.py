@@ -200,13 +200,7 @@ def build_model(args):
 
 
 def default_output_dir(args):
-    parts = [
-        args.outputs_root,
-        "busi",
-        "gradcam",
-        args.model,
-        f"img_{args.image_size}",
-    ]
+    parts = [args.outputs_root, args.model, f"img_{args.image_size}"]
     if args.model == "mk_mnet":
         parts.append(f"width_{args.width_mult:g}")
     parts.append(f"stage_{args.stage}")
@@ -323,7 +317,7 @@ def parse_args():
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
-    parser.add_argument("--outputs-root", type=Path, default=Path("outputs"))
+    parser.add_argument("--outputs-root", type=Path, default=Path("artifacts/gradcam"))
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--width-mult", type=float, default=1.0)

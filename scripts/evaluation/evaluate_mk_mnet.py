@@ -22,7 +22,11 @@ from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 from torch.utils.data import DataLoader
 
 from model import MKMNet
-from train_mk_mnet import BUSI_CLASSES, BUSIMultiTaskDataset, build_transforms
+from scripts.training.train_mk_mnet import (
+    BUSI_CLASSES,
+    BUSIMultiTaskDataset,
+    build_transforms,
+)
 
 
 NORMAL_INDEX = BUSI_CLASSES.index("normal")

@@ -90,7 +90,7 @@ def main():
     parser.add_argument("--warmup", type=int, default=10)
     parser.add_argument("--iterations", type=int, default=50)
     parser.add_argument("--device", choices=("cpu", "cuda"), default="cpu")
-    parser.add_argument("--output", type=Path, default=Path("model-profile-results/profile.csv"))
+    parser.add_argument("--output", type=Path, default=Path("artifacts/model-profiles/profile.csv"))
     parser.add_argument("--skip-flops", action="store_true")
     args = parser.parse_args()
 

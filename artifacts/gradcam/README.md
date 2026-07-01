@@ -7,7 +7,7 @@ Các ảnh được chọn để đưa vào báo cáo nên được sao chép sa
 Quy ước thư mục:
 
 ```text
-gradcam-results/
+artifacts/gradcam/
 └── <model>/
     └── stage_<stage>/
         └── target_<predicted|true>/
@@ -16,7 +16,7 @@ gradcam-results/
 Ví dụ:
 
 ```text
-gradcam-results/mk_mnet_width025/stage_5/target_true/
+artifacts/gradcam/mk_mnet_width025/stage_5/target_true/
 ```
 
 Nên tạo cùng một tập mẫu với `--seed` cố định khi so sánh các stage.
