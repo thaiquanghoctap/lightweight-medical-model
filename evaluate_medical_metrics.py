@@ -21,20 +21,21 @@ SMOOTH = 1e-6
 
 
 class BUSIEvaluationDataset(Dataset):
-    def __init__(self, dataset_dir, image_size):
+    def __init__(self, dataset_dir, image_size, split):
         self.image_size = image_size
+        self.split = split
         self.samples = []
         for label, class_name in enumerate(BUSI_CLASSES):
-            images_dir = dataset_dir / "test" / class_name / "images"
+            images_dir = dataset_dir / split / class_name / "images"
             if not images_dir.is_dir():
-                raise FileNotFoundError(f"Missing test image directory: {images_dir}")
+                raise FileNotFoundError(f"Missing {split} image directory: {images_dir}")
             images = sorted(
                 path
                 for path in images_dir.iterdir()
                 if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
             )
             if not images:
-                raise ValueError(f"No test images found in: {images_dir}")
+                raise ValueError(f"No {split} images found in: {images_dir}")
             for image_path in images:
                 mask_path = (
                     image_path.parent.parent
@@ -304,7 +305,7 @@ def evaluate(args):
     if not args.checkpoint.is_file():
         raise FileNotFoundError(f"Checkpoint not found: {args.checkpoint}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset = BUSIEvaluationDataset(args.dataset_dir, args.image_size)
+    dataset = BUSIEvaluationDataset(args.dataset_dir, args.image_size, args.split)
     loader = DataLoader(
         dataset,
         batch_size=args.batch_size,
@@ -378,6 +379,7 @@ def evaluate(args):
                 "variant": variant_name,
                 "model": args.model,
                 "checkpoint": str(args.checkpoint),
+                "split": args.split,
                 "samples": len(labels),
                 **classification,
                 **segmentation,
@@ -388,7 +390,7 @@ def evaluate(args):
         for row in per_class:
             seg = segmentation_per_class.get(row["class"], {"dice": "", "iou": ""})
             per_class_rows.append(
-                {"variant": variant_name, "model": args.model, **row, **seg}
+                {"variant": variant_name, "model": args.model, "split": args.split, **row, **seg}
             )
         prefix = args.output_dir / f"confusion_matrix_{variant_name}"
         write_matrix_csv(prefix.with_name(prefix.name + "_counts.csv"), matrix, int)
@@ -434,7 +436,8 @@ def evaluate(args):
 
     print(f"Model: {args.model}")
     print(f"Checkpoint: {args.checkpoint}")
-    print(f"Test samples: {len(dataset)}")
+    print(f"Split: {args.split}")
+    print(f"Samples: {len(dataset)}")
     print(f"Saved detailed medical evaluation to: {args.output_dir}")
 
 
@@ -444,6 +447,7 @@ def parse_args():
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--split", choices=("val", "test"), default="test")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--width-mult", type=float, default=1.0)
     parser.add_argument("--cbam", type=parse_bool, default=True)

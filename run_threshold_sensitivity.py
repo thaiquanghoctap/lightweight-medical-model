@@ -25,7 +25,7 @@ def write_csv(path, fieldnames, rows):
 
 
 def run_evaluation(args, threshold):
-    output_dir = args.output_root / f"area_{slug_threshold(threshold)}"
+    output_dir = args.output_root / args.split / f"area_{slug_threshold(threshold)}"
     command = [
         sys.executable,
         str(args.evaluator),
@@ -37,6 +37,8 @@ def run_evaluation(args, threshold):
         str(args.dataset_dir),
         "--output-dir",
         str(output_dir),
+        "--split",
+        args.split,
         "--image-size",
         str(args.image_size),
         "--width-mult",
@@ -125,6 +127,7 @@ def main():
     parser.add_argument("--dataset-dir", type=Path, default=Path("data/busi"))
     parser.add_argument("--output-root", type=Path, default=Path("threshold-sensitivity-results"))
     parser.add_argument("--evaluator", type=Path, default=Path("evaluate_medical_metrics.py"))
+    parser.add_argument("--split", choices=("val", "test"), default="test")
     parser.add_argument("--image-size", type=int, default=224)
     parser.add_argument("--width-mult", type=float, default=1.0)
     parser.add_argument("--batch-size", type=int, default=8)
