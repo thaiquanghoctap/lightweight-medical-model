@@ -14,11 +14,12 @@ Prediction-refining (adapted from Aumente-Maestro et al., CMPB 2025):
 
 import argparse
 import csv
+import time
 from pathlib import Path
 
 import numpy as np
 import torch
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support, roc_auc_score
 from torch.utils.data import DataLoader
 
 from model import MKMNet
@@ -86,18 +87,36 @@ def summarize(labels, class_predictions, dice, iou):
         zero_division=0,
     )
 
+    confusion = confusion_matrix(labels, class_predictions, labels=list(range(len(BUSI_CLASSES))))
+    total = confusion.sum()
+
     per_class = {}
     for index, name in enumerate(BUSI_CLASSES):
         class_mask = labels == index
+        true_positive = confusion[index, index]
+        false_positive = confusion[:, index].sum() - true_positive
+        false_negative = confusion[index, :].sum() - true_positive
+        true_negative = total - true_positive - false_positive - false_negative
+        specificity = true_negative / (true_negative + false_positive) if (true_negative + false_positive) else float("nan")
         per_class[name] = {
             "dice": float(np.mean(dice[class_mask])) if class_mask.any() else float("nan"),
             "iou": float(np.mean(iou[class_mask])) if class_mask.any() else float("nan"),
             "precision": float(precision[index]),
             "recall": float(recall[index]),
             "f1": float(f1[index]),
+            "specificity": float(specificity),
             "support": int(class_mask.sum()),
         }
     metrics["per_class"] = per_class
+    metrics["confusion"] = confusion.tolist()
+
+    # Clinical lesion-detection view: positive = lesion (benign/malignant), negative = normal.
+    normal_index = NORMAL_INDEX
+    normal_mask = labels == normal_index
+    if normal_mask.any():
+        normal_called_lesion = np.isin(class_predictions[normal_mask], LESION_INDICES).sum()
+        metrics["normal_fp_rate"] = float(normal_called_lesion / normal_mask.sum())
+        metrics["normal_specificity"] = float(1.0 - metrics["normal_fp_rate"])
     return metrics
 
 
@@ -116,6 +135,23 @@ def build_run_dir(args):
     )
 
 
+def measure_latency(model, image_size, device, warmup=10, runs=50):
+    """Mean forward time per image at batch size 1."""
+    dummy = torch.randn(1, 3, image_size, image_size, device=device)
+    with torch.inference_mode():
+        for _ in range(warmup):
+            model(dummy)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        start = time.perf_counter()
+        for _ in range(runs):
+            model(dummy)
+        if device.type == "cuda":
+            torch.cuda.synchronize()
+        elapsed = time.perf_counter() - start
+    return 1000.0 * elapsed / runs
+
+
 def evaluate(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     run_dir = build_run_dir(args)
@@ -124,14 +160,18 @@ def evaluate(args):
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint}")
 
     _, eval_transform = build_transforms(args.image_size)
-    dataset = BUSIMultiTaskDataset(args.dataset_dir / "test", eval_transform)
+    dataset = BUSIMultiTaskDataset(args.dataset_dir / args.split, eval_transform)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
-    print(f"test: {len(dataset)} image-label-mask samples")
+    print(f"{args.split}: {len(dataset)} image-label-mask samples")
 
     model = MKMNet(num_classes=len(BUSI_CLASSES), deep_supervision=True, width_mult=args.width_mult)
     model.load_state_dict(torch.load(checkpoint, map_location=device, weights_only=True))
     model.to(device)
     model.eval()
+
+    if args.latency:
+        ms = measure_latency(model, args.image_size, device)
+        print(f"Inference latency: {ms:.2f} ms/image (batch 1, {device})")
 
     labels = []
     probabilities = []
@@ -194,12 +234,17 @@ def print_report(title, metrics):
         f"Lesion-only  Dice: {metrics['dice_lesion']:.4f} | IoU: {metrics['iou_lesion']:.4f}  "
         f"(benign+malignant, comparable to MK-UNet/CMUNeXt)"
     )
-    print(f"{'Class':<12}{'Dice':>8}{'IoU':>8}{'Prec':>8}{'Recall':>8}{'F1':>8}{'N':>6}")
+    if "normal_fp_rate" in metrics:
+        print(
+            f"Clinical (lesion vs normal): specificity = {metrics['normal_specificity']:.4f} "
+            f"| false-positive rate on normal scans = {metrics['normal_fp_rate']:.4f}"
+        )
+    print(f"{'Class':<12}{'Dice':>8}{'IoU':>8}{'Prec':>8}{'Recall':>8}{'F1':>8}{'Spec':>8}{'N':>6}")
     for name in BUSI_CLASSES:
         row = metrics["per_class"][name]
         print(
             f"{name:<12}{row['dice']:>8.4f}{row['iou']:>8.4f}"
-            f"{row['precision']:>8.4f}{row['recall']:>8.4f}{row['f1']:>8.4f}{row['support']:>6d}"
+            f"{row['precision']:>8.4f}{row['recall']:>8.4f}{row['f1']:>8.4f}{row['specificity']:>8.4f}{row['support']:>6d}"
         )
 
 
@@ -247,6 +292,8 @@ def parse_args():
     parser.add_argument("--checkpoint", type=Path, default=None)
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--image-size", type=int, default=224)
+    parser.add_argument("--split", choices=["train", "val", "test"], default="test", help="Eval split (use val to select area-threshold).")
+    parser.add_argument("--latency", action="store_true", help="Measure inference latency (ms/image, batch 1).")
     parser.add_argument("--width-mult", type=float, default=1.0)
     parser.add_argument("--oversample", action="store_true", help="Locate the oversampled-training checkpoint.")
     parser.add_argument("--lambda", dest="lambda_weight", type=float, default=0.8)
